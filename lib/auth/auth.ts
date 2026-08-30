@@ -1,20 +1,20 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import * as schema from '@/lib/db/schema'
+import * as schema from '@/lib/db/schema/auth'
 import { db } from '@/lib/db/db'
 
 export const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
 
+  logger: {
+    disabled: false,
+    level: 'debug',
+  },
+
   database: drizzleAdapter(db, {
     provider: 'pg',
-    schema: {
-      user: schema.user,
-      session: schema.session,
-      account: schema.account,
-      verification: schema.verification,
-    },
+    schema: schema,
   }),
 
   emailAndPassword: {
@@ -26,6 +26,14 @@ export const auth = betterAuth({
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID || '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
+      mapProfileToUser: (profile) => {
+        return {
+          name: profile.name || profile.email.split('@')[0],
+          email: profile.email,
+          emailVerified: profile.email_verified ?? true,
+          image: profile.picture,
+        }
+      },
     },
   },
 
@@ -41,6 +49,8 @@ export const auth = betterAuth({
   trustedOrigins: [
     process.env.BETTER_AUTH_URL || 'http://localhost:3000',
     process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
     'https://oncollably.vercel.app',
   ],
 })
