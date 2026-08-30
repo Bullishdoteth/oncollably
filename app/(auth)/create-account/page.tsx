@@ -1,9 +1,15 @@
+import { Suspense } from "react"
 import Link from "next/link"
 import { GoogleButton } from "@/components/auth/google-button"
+import { AuthToastListener } from "@/components/auth/auth-toast-listener"
 
 export default function CreateAccountPage() {
   return (
     <div className="space-y-6">
+      <Suspense fallback={null}>
+        <AuthToastListener />
+      </Suspense>
+
       <div className="text-center space-y-2">
         <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">
           Create your account

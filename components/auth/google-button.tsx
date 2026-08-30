@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { toast } from "sonner"
 import { signIn } from "@/lib/auth/auth-client"
 
 interface GoogleButtonProps {
@@ -10,7 +11,7 @@ interface GoogleButtonProps {
 
 export function GoogleButton({
   label = "Continue with Google",
-  callbackURL = "/dashboard",
+  callbackURL = "/",
 }: GoogleButtonProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -25,12 +26,20 @@ export function GoogleButton({
       })
       if (res?.error) {
         console.error("Sign in failed:", res.error)
-        setError(res.error.message || "Failed to initiate Google sign-in. Please try again.")
+        const errMsg = res.error.message || "Failed to initiate Google sign-in. Please try again."
+        setError(errMsg)
+        toast.error("Google Sign-In Error", {
+          description: errMsg,
+        })
         setIsLoading(false)
       }
     } catch (err: any) {
       console.error("Sign in failed:", err)
-      setError(err?.message || "Failed to initiate Google sign-in. Please try again.")
+      const errMsg = err?.message || "Failed to initiate Google sign-in. Please try again."
+      setError(errMsg)
+      toast.error("Google Sign-In Error", {
+        description: errMsg,
+      })
       setIsLoading(false)
     }
   }
