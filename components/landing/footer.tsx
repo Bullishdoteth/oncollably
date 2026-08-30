@@ -2,6 +2,7 @@
 
 import React from "react"
 import Link from "next/link"
+import { Logo } from "@/components/ui/logo"
 
 export function Footer() {
   return (
@@ -11,12 +12,8 @@ export function Footer() {
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-8 border-b border-zinc-100">
           {/* Brand */}
           <div className="space-y-1.5 max-w-sm">
-            <Link href="/" className="inline-block">
-              <span className="font-extrabold text-xl tracking-tight text-black font-sans">
-                Oncollably
-              </span>
-            </Link>
-            <p className="text-xs text-zinc-500 leading-relaxed font-normal">
+            <Logo />
+            <p className="text-xs text-zinc-500 leading-relaxed font-normal pt-1">
               The Web3 collaboration standard. Manage whitelist spot allocations, verify CMs, and track partnerships in one place.
             </p>
           </div>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react"
 import Link from "next/link"
+import { Logo } from "@/components/ui/logo"
 import { MegaMenu, MobileAccordionMenu, MenuCategory } from "./mega-menu"
 
 export function Header() {
@@ -45,14 +46,7 @@ export function Header() {
         <div className="flex items-center justify-between gap-4">
           {/* Column 1: Logo */}
           <div className="flex items-center shrink-0">
-            <Link
-              href="/"
-              className="group flex items-center gap-2 focus:outline-hidden"
-            >
-              <span className="font-extrabold text-xl tracking-tight text-black font-sans">
-                Oncollably
-              </span>
-            </Link>
+            <Logo />
           </div>
 
           {/* Column 2: Navigation Items (Megamenu Trigger Buttons) */}
