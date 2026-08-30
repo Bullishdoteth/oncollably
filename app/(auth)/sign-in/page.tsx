@@ -14,7 +14,7 @@ export default function SignInPage() {
       </div>
 
       <div className="pt-2">
-        <GoogleButton label="Sign in with Google" callbackURL="/" />
+        <GoogleButton label="Sign in with Google" callbackURL="/dashboard" />
       </div>
 
       <div className="pt-4 border-t border-zinc-100 text-center">

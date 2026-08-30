@@ -10,7 +10,7 @@ interface GoogleButtonProps {
 
 export function GoogleButton({
   label = "Continue with Google",
-  callbackURL = "/",
+  callbackURL = "/dashboard",
 }: GoogleButtonProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
