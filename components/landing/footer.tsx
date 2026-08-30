@@ -1,0 +1,63 @@
+"use client"
+
+import React from "react"
+import Link from "next/link"
+
+export function Footer() {
+  return (
+    <footer className="w-full border-t border-zinc-100 bg-white text-zinc-900 pt-12 pb-8 px-4 sm:px-6">
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Top Footer Section */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 pb-8 border-b border-zinc-100">
+          {/* Brand */}
+          <div className="space-y-1.5 max-w-sm">
+            <Link href="/" className="inline-block">
+              <span className="font-extrabold text-xl tracking-tight text-black font-sans">
+                Oncollably
+              </span>
+            </Link>
+            <p className="text-xs text-zinc-500 leading-relaxed font-normal">
+              The Web3 collaboration standard. Manage whitelist spot allocations, verify CMs, and track partnerships in one place.
+            </p>
+          </div>
+
+          {/* Navigation Links */}
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs font-semibold text-zinc-600">
+            <Link href="/#features" className="hover:text-black transition-colors">
+              For Projects
+            </Link>
+            <Link href="/#features" className="hover:text-black transition-colors">
+              For Communities
+            </Link>
+            <Link href="/collabmanager" className="hover:text-black transition-colors">
+              For Collab Managers
+            </Link>
+            <Link href="/sign-in" className="hover:text-black transition-colors">
+              Sign in
+            </Link>
+            <Link href="/create-account" className="hover:text-black transition-colors">
+              Create account
+            </Link>
+          </div>
+        </div>
+
+        {/* Bottom Footer Section: Copyright & Built By */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
+          <p>© {new Date().getFullYear()} Oncollably. All rights reserved.</p>
+
+          <p className="flex items-center gap-1 font-medium">
+            <span>Built by</span>
+            <a
+              href="https://x.com/bullishdoteth"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-bold text-zinc-900 hover:text-black underline underline-offset-4 decoration-zinc-300 transition-colors"
+            >
+              Bullish.eth
+            </a>
+          </p>
+        </div>
+      </div>
+    </footer>
+  )
+}
