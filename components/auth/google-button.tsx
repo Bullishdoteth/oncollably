@@ -19,10 +19,15 @@ export function GoogleButton({
     try {
       setIsLoading(true)
       setError(null)
-      await signIn.social({
+      const res = await signIn.social({
         provider: "google",
         callbackURL,
       })
+      if (res?.error) {
+        console.error("Sign in failed:", res.error)
+        setError(res.error.message || "Failed to initiate Google sign-in. Please try again.")
+        setIsLoading(false)
+      }
     } catch (err: any) {
       console.error("Sign in failed:", err)
       setError(err?.message || "Failed to initiate Google sign-in. Please try again.")
