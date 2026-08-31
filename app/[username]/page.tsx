@@ -1,11 +1,33 @@
 import React from "react"
+import { Metadata } from "next"
 import Link from "next/link"
 import { PoweredBadge } from "@/components/marketing/powered-badge"
+import { constructMetadata } from "@/lib/og-builder"
 
 interface ProfilePageProps {
   params: Promise<{
     username: string
   }>
+}
+
+export async function generateMetadata({ params }: ProfilePageProps): Promise<Metadata> {
+  const resolvedParams = await params
+  const rawUsername = resolvedParams.username || "collabmanager"
+  const username = decodeURIComponent(rawUsername).replace(/^@/, "")
+  const formattedName = username.charAt(0).toUpperCase() + username.slice(1)
+
+  const title = `@${username} (${formattedName}) | Verified Collab Manager on Oncollably`
+  const description = `View @${username}'s official Web3 collaboration profile on Oncollably. Submit partnership requests, manage whitelist spot allocations, and verify community trust.`
+
+  return constructMetadata({
+    title,
+    description,
+    imageTitle: `@${username} — Verified Collab Manager`,
+    imageDescription: description,
+    badge: "Verified CM Profile",
+    path: `/@${username}`,
+    type: "profile",
+  })
 }
 
 export default async function CollabManagerProfilePage({ params }: ProfilePageProps) {
@@ -113,4 +135,3 @@ export default async function CollabManagerProfilePage({ params }: ProfilePagePr
     </div>
   )
 }
-
