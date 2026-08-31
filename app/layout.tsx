@@ -46,6 +46,14 @@ export const metadata: Metadata = {
     description:
       "Manage collaboration applications, verify community managers, allocate whitelist spots, and track every Web3 collaboration in one unified dashboard.",
     siteName: "OnCollably",
+    images: [
+      {
+        url: "/og.png",
+        width: 1200,
+        height: 630,
+        alt: "OnCollably - The #1 Web3 Collaboration Management Platform",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
@@ -53,6 +61,7 @@ export const metadata: Metadata = {
     description:
       "Stop doing Web3 collabs in messy DMs. Automate whitelist spot allocations, verify CMs, and track applications in one place.",
     creator: "@oncollably",
+    images: ["/og.png"],
   },
   robots: {
     index: true,
