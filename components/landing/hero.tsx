@@ -2,6 +2,7 @@
 
 import React from "react"
 import Link from "next/link"
+import { motion } from "framer-motion"
 
 const partners = [
   { name: "Apex DAOs", category: "DAO Ecosystem" },
@@ -18,18 +19,34 @@ export function Hero() {
   return (
     <section className="relative overflow-hidden pt-12 pb-20 sm:pt-20 sm:pb-28">
       <div className="max-w-7xl mx-auto px-8 sm:px-6 lg:px-12 text-center space-y-8">
+        
         {/* Main Headline */}
-        <h1 className="text-4xl sm:text-6xl md:text-7xl font-regular tracking-tight text-black max-w-4xl mx-auto leading-[1.08]">
+        <motion.h1
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.1, ease: [0.21, 0.47, 0.32, 0.98] }}
+          className="text-4xl sm:text-6xl md:text-7xl font-regular tracking-tight text-black max-w-4xl mx-auto leading-[1.08]"
+        >
           Stop doing Web3 collabs in messy DMs.
-        </h1>
+        </motion.h1>
 
         {/* Subtitle */}
-        <p className="text-xl text-zinc-600 max-w-2xl mx-auto font-normal leading-relaxed">
+        <motion.p
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.25, ease: [0.21, 0.47, 0.32, 0.98] }}
+          className="text-xl text-zinc-600 max-w-2xl mx-auto font-normal leading-relaxed"
+        >
           Manage collaboration applications, verify communities and collab managers, allocate whitelist spots, and track every deal in one unified dashboard.
-        </p>
+        </motion.p>
 
         {/* Call to Actions */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4, ease: [0.21, 0.47, 0.32, 0.98] }}
+          className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2"
+        >
           <Link
             href="/create-account"
             className="w-full sm:w-auto px-8 py-4 bg-black hover:bg-zinc-800 active:bg-zinc-900 text-white font-semibold text-base rounded-full shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer"
@@ -42,11 +59,17 @@ export function Hero() {
           >
             View Pricing
           </Link>
-        </div>
+        </motion.div>
       </div>
 
-      {/* Breathable Marquee Component (No rounded classes, transparent background, seamless edge fades) */}
-      <div className="mt-20 sm:mt-28 pt-10 border-t border-zinc-100">
+      {/* Marquee Component with Framer Motion reveal */}
+      <motion.div
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-40px" }}
+        transition={{ duration: 0.7, delay: 0.5, ease: [0.21, 0.47, 0.32, 0.98] }}
+        className="mt-20 sm:mt-28 pt-10 border-t border-zinc-100"
+      >
         <div className="max-w-6xl mx-auto px-4 mb-8 text-center">
           <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
             Trusted by 500+ Web3 Communities, DAOs & Collab Managers
@@ -83,7 +106,7 @@ export function Hero() {
             ))}
           </div>
         </div>
-      </div>
+      </motion.div>
     </section>
   )
 }

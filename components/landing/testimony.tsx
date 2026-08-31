@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import { motion } from "framer-motion"
 
 const testimonialsRow1 = [
   {
@@ -152,7 +153,13 @@ export function Testimony() {
     <section id="testimonials" className="scroll-mt-20 relative overflow-hidden py-16 sm:py-24 border-t border-zinc-800 bg-black text-white">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 space-y-12 text-center">
         {/* Section Header */}
-        <div className="space-y-4 max-w-2xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.6, ease: [0.21, 0.47, 0.32, 0.98] }}
+          className="space-y-4 max-w-2xl mx-auto"
+        >
           <span className="inline-block px-3 py-1 bg-zinc-800 text-zinc-300 text-xs font-semibold uppercase tracking-widest rounded-full border border-zinc-700">
             Community Feedback
           </span>
@@ -162,10 +169,16 @@ export function Testimony() {
           <p className="text-lg sm:text-xl text-zinc-400 font-normal leading-relaxed">
             See what project leads, DAOs, and collab managers are saying on X.
           </p>
-        </div>
+        </motion.div>
 
         {/* Marquee Container with Left & Right Gradient Fades */}
-        <div className="relative w-full overflow-hidden py-4 space-y-6">
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.7, delay: 0.2, ease: [0.21, 0.47, 0.32, 0.98] }}
+          className="relative w-full overflow-hidden py-4 space-y-6"
+        >
           {/* Left & Right Gradient Fade Masks */}
           <div className="absolute top-0 bottom-0 left-0 w-24 sm:w-48 bg-gradient-to-r from-black via-black/80 to-transparent z-10 pointer-events-none" />
           <div className="absolute top-0 bottom-0 right-0 w-24 sm:w-48 bg-gradient-to-l from-black via-black/80 to-transparent z-10 pointer-events-none" />
@@ -183,7 +196,7 @@ export function Testimony() {
               <TestimonyCard key={`row2-${index}`} item={item} />
             ))}
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   )

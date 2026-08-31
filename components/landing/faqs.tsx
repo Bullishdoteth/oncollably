@@ -2,6 +2,7 @@
 
 import React, { useState } from "react"
 import Link from "next/link"
+import { motion, AnimatePresence } from "framer-motion"
 
 const faqs = [
   {
@@ -46,8 +47,15 @@ export function FAQs() {
   return (
     <section id="faqs" className="scroll-mt-20 relative overflow-hidden py-16 sm:py-24 lg:py-32 border-t border-zinc-100 bg-white">
       <div className="max-w-4xl mx-auto px-6 sm:px-8 space-y-12">
+        
         {/* Main Headline */}
-        <div className="text-center space-y-4 max-w-2xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.6, ease: [0.21, 0.47, 0.32, 0.98] }}
+          className="text-center space-y-4 max-w-2xl mx-auto"
+        >
           <span className="inline-block px-3 py-1 bg-zinc-100 text-zinc-800 text-xs font-semibold uppercase tracking-widest rounded-full">
             Got Questions?
           </span>
@@ -57,15 +65,19 @@ export function FAQs() {
           <p className="text-lg sm:text-xl text-zinc-600 font-normal leading-relaxed">
             Everything you need to know about Oncollably and Web3 collaboration management.
           </p>
-        </div>
+        </motion.div>
 
         {/* FAQ Accordion List */}
         <div className="space-y-4 pt-4">
           {faqs.map((faq, index) => {
             const isOpen = openIndex === index
             return (
-              <div
+              <motion.div
                 key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-40px" }}
+                transition={{ duration: 0.4, delay: index * 0.08 }}
                 className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
                   isOpen
                     ? "border-zinc-300 bg-zinc-50/80 shadow-sm"
@@ -98,18 +110,34 @@ export function FAQs() {
                   </div>
                 </button>
 
-                {isOpen && (
-                  <div className="px-6 pb-6 sm:px-7 sm:pb-7 text-sm sm:text-base text-zinc-600 leading-relaxed border-t border-zinc-200/60 pt-4 animate-in fade-in duration-200">
-                    {faq.answer}
-                  </div>
-                )}
-              </div>
+                <AnimatePresence>
+                  {isOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.25, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-6 pb-6 sm:px-7 sm:pb-7 text-sm sm:text-base text-zinc-600 leading-relaxed border-t border-zinc-200/60 pt-4">
+                        {faq.answer}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
             )
           })}
         </div>
 
         {/* Support callout */}
-        <div className="pt-8 text-center bg-zinc-50 rounded-3xl p-8 border border-zinc-100 space-y-3">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-40px" }}
+          transition={{ duration: 0.6, delay: 0.3 }}
+          className="pt-8 text-center bg-zinc-50 rounded-3xl p-8 border border-zinc-100 space-y-3"
+        >
           <h3 className="text-lg font-semibold text-zinc-900">
             Still have questions?
           </h3>
@@ -124,9 +152,8 @@ export function FAQs() {
               Get Started Now
             </Link>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   )
 }
-

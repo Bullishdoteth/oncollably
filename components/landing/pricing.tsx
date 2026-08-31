@@ -2,13 +2,20 @@
 
 import React from "react"
 import Link from "next/link"
+import { motion } from "framer-motion"
 
 export function Pricing() {
   return (
     <section id="pricing" className="scroll-mt-20 relative overflow-hidden py-16 sm:py-24 lg:py-32 border-t border-zinc-100 bg-white">
       <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 space-y-12">
         {/* Header & One-time payment badge aligned */}
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-zinc-100 pb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.6, ease: [0.21, 0.47, 0.32, 0.98] }}
+          className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 border-b border-zinc-100 pb-8"
+        >
           <div className="space-y-3 max-w-2xl">
             <h2 className="text-4xl sm:text-5xl md:text-6xl font-regular tracking-tight text-black leading-[1.1]">
               Pricing
@@ -27,10 +34,16 @@ export function Pricing() {
               </span>
             </span>
           </div>
-        </div>
+        </motion.div>
 
         {/* 2-Column Single Card Layout */}
-        <div className="bg-white rounded-3xl border border-zinc-200 shadow-xl overflow-hidden grid grid-cols-1 lg:grid-cols-2">
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-60px" }}
+          transition={{ duration: 0.7, delay: 0.2, ease: [0.21, 0.47, 0.32, 0.98] }}
+          className="bg-white rounded-3xl border border-zinc-200 shadow-xl overflow-hidden grid grid-cols-1 lg:grid-cols-2"
+        >
           {/* Column 1: Pricing Card ($10) */}
           <div className="p-8 sm:p-10 lg:p-12 flex flex-col justify-between space-y-8 bg-zinc-50/50">
             <div className="space-y-6">
@@ -71,12 +84,19 @@ export function Pricing() {
                     "Exportable distribution data & analytics",
                     "Direct manager messaging & verification",
                   ].map((feature, idx) => (
-                    <li key={idx} className="flex items-center gap-3">
+                    <motion.li
+                      key={idx}
+                      initial={{ opacity: 0, x: -10 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.3, delay: 0.1 + idx * 0.05 }}
+                      className="flex items-center gap-3"
+                    >
                       <div className="w-5 h-5 rounded-full bg-black text-white flex items-center justify-center text-xs shrink-0 font-bold">
                         ✓
                       </div>
                       <span>{feature}</span>
-                    </li>
+                    </motion.li>
                   ))}
                 </ul>
               </div>
@@ -119,22 +139,24 @@ export function Pricing() {
 
               {/* Highlights grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-zinc-800">
-                <div className="space-y-1 bg-zinc-900/60 p-4 rounded-xl border border-zinc-800/80">
-                  <h4 className="text-white text-sm font-semibold">Zero Subscriptions</h4>
-                  <p className="text-zinc-400 text-xs leading-normal">Pay $10 once per project launch with zero recurring monthly billing.</p>
-                </div>
-                <div className="space-y-1 bg-zinc-900/60 p-4 rounded-xl border border-zinc-800/80">
-                  <h4 className="text-white text-sm font-semibold">Sybil Resistant</h4>
-                  <p className="text-zinc-400 text-xs leading-normal">Verified communities ensure authentic engagement & real whitelist winners.</p>
-                </div>
-                <div className="space-y-1 bg-zinc-900/60 p-4 rounded-xl border border-zinc-800/80">
-                  <h4 className="text-white text-sm font-semibold">Real-Time Tracking</h4>
-                  <p className="text-zinc-400 text-xs leading-normal">Track every spot allocated across all partners from one dashboard.</p>
-                </div>
-                <div className="space-y-1 bg-zinc-900/60 p-4 rounded-xl border border-zinc-800/80">
-                  <h4 className="text-white text-sm font-semibold">Instant Setup</h4>
-                  <p className="text-zinc-400 text-xs leading-normal">Launch your collab page in minutes with custom requirements.</p>
-                </div>
+                {[
+                  { title: "Zero Subscriptions", desc: "Pay $10 once per project launch with zero recurring monthly billing." },
+                  { title: "Sybil Resistant", desc: "Verified communities ensure authentic engagement & real whitelist winners." },
+                  { title: "Real-Time Tracking", desc: "Track every spot allocated across all partners from one dashboard." },
+                  { title: "Instant Setup", desc: "Launch your collab page in minutes with custom requirements." },
+                ].map((item, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, y: 15 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.4, delay: 0.3 + idx * 0.08 }}
+                    className="space-y-1 bg-zinc-900/60 p-4 rounded-xl border border-zinc-800/80"
+                  >
+                    <h4 className="text-white text-sm font-semibold">{item.title}</h4>
+                    <p className="text-zinc-400 text-xs leading-normal">{item.desc}</p>
+                  </motion.div>
+                ))}
               </div>
             </div>
 
@@ -143,9 +165,8 @@ export function Pricing() {
               <span className="font-semibold text-zinc-300">100% Transparent</span>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </section>
   )
 }
-
