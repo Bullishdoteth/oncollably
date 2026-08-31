@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/sonner";
+import { SmoothScrollProvider } from "@/components/providers/smooth-scroll";
 import "./globals.css";
 
 const inter = Inter({
@@ -78,9 +79,12 @@ export default function RootLayout({
       className={`${inter.variable} h-full antialiased font-sans`}
     >
       <body className="min-h-full flex flex-col font-sans bg-white text-zinc-900">
-        {children}
+        <SmoothScrollProvider>
+          {children}
+        </SmoothScrollProvider>
         <Toaster position="bottom-right" />
       </body>
     </html>
   );
 }
+
