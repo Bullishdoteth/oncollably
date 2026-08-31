@@ -17,21 +17,15 @@ const partners = [
 export function Hero() {
   return (
     <section className="relative overflow-hidden pt-12 pb-20 sm:pt-20 sm:pb-28">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center space-y-8">
-        {/* Top Badge */}
-        <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full text-xs font-semibold bg-zinc-100/90 text-zinc-800 border border-zinc-200/80 shadow-2xs">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>The Unified Web3 Collaboration Standard</span>
-        </div>
-
+      <div className="max-w-7xl mx-auto px-8 sm:px-6 lg:px-12 text-center space-y-8">
         {/* Main Headline */}
-        <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-black max-w-4xl mx-auto leading-[1.08]">
+        <h1 className="text-4xl sm:text-6xl md:text-7xl font-regular tracking-tight text-black max-w-4xl mx-auto leading-[1.08]">
           Stop doing Web3 collabs in messy DMs.
         </h1>
 
         {/* Subtitle */}
-        <p className="text-lg sm:text-xl text-zinc-600 max-w-2xl mx-auto font-normal leading-relaxed">
-          Manage collaboration applications, verify communities and Collab Managers, allocate whitelist spots, and track every deal in one unified dashboard.
+        <p className="text-xl text-zinc-600 max-w-2xl mx-auto font-normal leading-relaxed">
+          Manage collaboration applications, verify communities and collab managers, allocate whitelist spots, and track every deal in one unified dashboard.
         </p>
 
         {/* Call to Actions */}
@@ -40,13 +34,13 @@ export function Hero() {
             href="/create-account"
             className="w-full sm:w-auto px-8 py-4 bg-black hover:bg-zinc-800 active:bg-zinc-900 text-white font-semibold text-base rounded-full shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer"
           >
-            Get Started for Free
+            Get Started Oncollably
           </Link>
           <Link
-            href="/collabmanager"
+            href="#pricing"
             className="w-full sm:w-auto px-8 py-4 bg-zinc-100 hover:bg-zinc-200/80 active:bg-zinc-200 text-zinc-900 font-semibold text-base rounded-full transition-colors cursor-pointer"
           >
-            View Sample CM Profile
+            View Pricing
           </Link>
         </div>
       </div>

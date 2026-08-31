@@ -5,42 +5,42 @@ import { AuthToastListener } from "@/components/auth/auth-toast-listener"
 
 export default function CreateAccountPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <Suspense fallback={null}>
         <AuthToastListener />
       </Suspense>
 
-      <div className="text-center space-y-2">
-        <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">
+      <div className="space-y-3 text-center">
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-black leading-tight">
           Create your account
         </h1>
-        <p className="text-sm text-zinc-500">
-          Get started with OnCollably using your Google account
+        <p className="text-base text-zinc-600 font-normal leading-relaxed max-w-sm mx-auto">
+          Get started with Oncollably to streamline project partnerships and whitelist management.
         </p>
       </div>
 
-      <div className="pt-2">
+      <div className="space-y-4 pt-2">
         <GoogleButton label="Sign up with Google" callbackURL="/dashboard" />
       </div>
 
-      <p className="text-xs text-center text-zinc-400 leading-relaxed px-2">
-        By continuing, you agree to OnCollably&apos;s{" "}
-        <a href="#" className="underline underline-offset-2 hover:text-zinc-600">
+      <p className="text-xs text-center text-zinc-400 leading-relaxed max-w-sm mx-auto">
+        By creating an account, you agree to Oncollably&apos;s{" "}
+        <Link href="/terms" className="underline underline-offset-2 hover:text-zinc-800 transition-colors font-medium">
           Terms of Service
-        </a>{" "}
+        </Link>{" "}
         and{" "}
-        <a href="#" className="underline underline-offset-2 hover:text-zinc-600">
+        <Link href="/privacy-policy" className="underline underline-offset-2 hover:text-zinc-800 transition-colors font-medium">
           Privacy Policy
-        </a>
+        </Link>
         .
       </p>
 
-      <div className="pt-4 border-t border-zinc-100 text-center">
-        <p className="text-sm text-zinc-500">
+      <div className="pt-6 border-t border-zinc-100 text-center">
+        <p className="text-sm text-zinc-600">
           Already have an account?{" "}
           <Link
             href="/sign-in"
-            className="font-semibold text-zinc-900 hover:text-zinc-700 underline underline-offset-4 decoration-zinc-300 transition-colors"
+            className="font-semibold text-zinc-900 hover:text-black underline underline-offset-4 decoration-zinc-300 hover:decoration-zinc-800 transition-all"
           >
             Sign in
           </Link>
