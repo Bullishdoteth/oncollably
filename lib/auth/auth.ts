@@ -16,12 +16,6 @@ export const auth = betterAuth({
     provider: 'pg',
     schema: schema,
   }),
-
-  emailAndPassword: {
-    enabled: false,
-    requireEmailVerification: false,
-  },
-
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID || '',
