@@ -1,55 +1,115 @@
-import { NextResponse } from "next/server"
-import { auth } from "@/lib/auth/auth"
-import { db } from "@/lib/db/db"
-import { user } from "@/lib/db/schema"
-import { eq } from "drizzle-orm"
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth/auth";
+import { db } from "@/lib/db/db";
+import { user, workspace } from "@/lib/db/schema";
+import { eq } from "drizzle-orm";
+import { polar, POLAR_PRODUCT_ID } from "@/lib/polar";
 
 export async function POST(request: Request) {
   try {
     const session = await auth.api.getSession({
       headers: request.headers,
-    })
+    });
 
     if (!session || !session.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json()
-    const { optionId, name, handle, discord, twitter, bio } = body
+    const body = await request.json();
+    const { optionId, name, handle, discord, twitter, bio, selectedEcosystems } = body;
 
-    // Map optionId to workspace type
-    let workspaceType = "project"
+    let workspaceType = "project";
     if (optionId === "connect_community") {
-      workspaceType = "community"
+      workspaceType = "community";
     } else if (optionId === "manage_collaborations") {
-      workspaceType = "cm"
+      workspaceType = "cm";
     }
 
-    // Update user record in database
-    await db
-      .update(user)
-      .set({
-        onboarded: true,
+    const formattedName = name?.trim() ? name.trim() : session.user.name;
+    const formattedHandle = handle?.trim() ? handle.trim() : `ws_${Date.now()}`;
+    const ecosystemsStr = Array.isArray(selectedEcosystems)
+      ? selectedEcosystems.join(",")
+      : "";
+
+    // 1. Create or update workspace in DB
+    const workspaceId = `ws_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const isPaidOption = optionId === "launch_campaign";
+    const initialStatus = isPaidOption ? "pending_payment" : "active";
+
+    await db.insert(workspace).values({
+      id: workspaceId,
+      userId: session.user.id,
+      name: formattedName,
+      handle: formattedHandle,
+      type: workspaceType,
+      discord: discord?.trim() || null,
+      twitter: twitter?.trim() || null,
+      bio: bio?.trim() || null,
+      ecosystems: ecosystemsStr,
+      status: initialStatus,
+      paid: !isPaidOption,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    // 2. If free workspace (Community / CM), mark user onboarded immediately
+    if (!isPaidOption) {
+      await db
+        .update(user)
+        .set({
+          onboarded: true,
+          workspaceType,
+          handle: formattedHandle,
+          discord: discord?.trim() || null,
+          twitter: twitter?.trim() || null,
+          bio: bio?.trim() || null,
+          updatedAt: new Date(),
+        })
+        .where(eq(user.id, session.user.id));
+
+      return NextResponse.json({
+        success: true,
+        requiresPayment: false,
         workspaceType,
-        name: name?.trim() ? name.trim() : session.user.name,
-        handle: handle?.trim() ? handle.trim() : null,
-        discord: discord?.trim() ? discord.trim() : null,
-        twitter: twitter?.trim() ? twitter.trim() : null,
-        bio: bio?.trim() ? bio.trim() : null,
-        updatedAt: new Date(),
-      })
-      .where(eq(user.id, session.user.id))
+        redirectUrl: `/${workspaceType}`,
+      });
+    }
+
+    // 3. If Paid Option ("launch_campaign"), generate Polar Checkout URL
+    if (!POLAR_PRODUCT_ID) {
+      return NextResponse.json(
+        { error: "Polar Test Product ID is not set in environment variables" },
+        { status: 500 }
+      );
+    }
+
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+    const successUrl = `${appUrl}/onboarding?status=success&workspace_id=${workspaceId}`;
+
+    const checkout = await polar.checkouts.create({
+      products: [POLAR_PRODUCT_ID],
+      successUrl,
+      customerEmail: session.user.email,
+      customerName: session.user.name || undefined,
+      metadata: {
+        userId: session.user.id,
+        workspaceId,
+        product_type: "workspace_activation",
+      },
+    });
 
     return NextResponse.json({
       success: true,
+      requiresPayment: true,
+      checkoutUrl: checkout.url,
+      workspaceId,
       workspaceType,
-      redirectUrl: `/${workspaceType}`,
-    })
+    });
   } catch (error: any) {
-    console.error("Onboarding API Error:", error)
+    console.error("Onboarding API Error:", error);
     return NextResponse.json(
-      { error: error?.message || "Failed to save onboarding settings" },
+      { error: error?.message || "Failed to process workspace onboarding" },
       { status: 500 }
-    )
+    );
   }
 }

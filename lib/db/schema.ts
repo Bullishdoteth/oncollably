@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean } from 'drizzle-orm/pg-core';
+import { pgTable, text, timestamp, boolean, integer } from 'drizzle-orm/pg-core';
 
 export const user = pgTable('user', {
   id: text('id').primaryKey(),
@@ -55,4 +55,41 @@ export const verification = pgTable('verification', {
   expiresAt: timestamp('expires_at').notNull(),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export const workspace = pgTable('workspace', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  name: text('name').notNull(),
+  handle: text('handle').notNull().unique(),
+  type: text('type').notNull(), // 'project', 'community', 'cm'
+  discord: text('discord'),
+  twitter: text('twitter'),
+  bio: text('bio'),
+  ecosystems: text('ecosystems'), // JSON string array or comma-separated
+  status: text('status').notNull().default('pending_payment'), // 'pending_payment', 'active'
+  paid: boolean('paid').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const workspaceSubscription = pgTable('workspace_subscription', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  workspaceId: text('workspace_id')
+    .notNull()
+    .references(() => workspace.id, { onDelete: 'cascade' }),
+  polarCheckoutId: text('polar_checkout_id'),
+  polarOrderId: text('polar_order_id'),
+  polarCustomerId: text('polar_customer_id'),
+  amount: integer('amount').notNull().default(1000), // In cents ($10.00)
+  currency: text('currency').notNull().default('usd'),
+  status: text('status').notNull().default('created'), // 'created', 'succeeded', 'failed'
+  productType: text('product_type').notNull().default('workspace_activation'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

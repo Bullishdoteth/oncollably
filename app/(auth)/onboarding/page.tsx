@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
 import {
@@ -56,8 +56,9 @@ const ECOSYSTEMS = [
   "Bitcoin Ordinals",
 ]
 
-export default function OnboardingPage() {
+function OnboardingContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [step, setStep] = useState<1 | 2>(1)
   const [selectedOptionId, setSelectedOptionId] = useState<string>("launch_campaign")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -70,6 +71,20 @@ export default function OnboardingPage() {
     bio: "",
     selectedEcosystems: ["Ethereum", "Solana"] as string[],
   })
+
+  // Handle Polar Checkout Return Success URL (?status=success)
+  useEffect(() => {
+    const status = searchParams.get("status")
+    if (status === "success") {
+      toast.success("Payment verified! Your workspace has been activated.", {
+        description: "Redirecting you to your project dashboard...",
+      })
+      const timeout = setTimeout(() => {
+        router.push("/project")
+      }, 1500)
+      return () => clearTimeout(timeout)
+    }
+  }, [searchParams, router])
 
   const selectedOption = CARDS.find((c) => c.id === selectedOptionId) || CARDS[0]
 
@@ -106,8 +121,14 @@ export default function OnboardingPage() {
         throw new Error(data.error || "Failed to complete onboarding")
       }
 
+      if (data.requiresPayment && data.checkoutUrl) {
+        toast.info("Redirecting to Polar payment checkout...")
+        window.location.href = data.checkoutUrl
+        return
+      }
+
       toast.success("Workspace setup complete! Redirecting to dashboard...")
-      router.push(data.redirectUrl || "/dashboard")
+      router.push(data.redirectUrl || `/${data.workspaceType || "project"}`)
     } catch (err: any) {
       console.error("Onboarding submission error:", err)
       toast.error("Onboarding Error", {
@@ -288,7 +309,7 @@ export default function OnboardingPage() {
                 <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider block">
                   Community Links
                 </label>
-                
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="relative flex items-center">
                     <div className="absolute left-3.5 text-zinc-400">
@@ -428,5 +449,13 @@ export default function OnboardingPage() {
         )}
       </AnimatePresence>
     </div>
+  )
+}
+
+export default function OnboardingPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-sm text-zinc-400">Loading onboarding...</div>}>
+      <OnboardingContent />
+    </Suspense>
   )
 }
