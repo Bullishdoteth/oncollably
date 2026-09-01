@@ -20,7 +20,7 @@ export default function CreateAccountPage() {
       </div>
 
       <div className="space-y-4 pt-2">
-        <GoogleButton label="Sign up with Google" callbackURL="/dashboard" />
+        <GoogleButton label="Sign up with Google" callbackURL="/onboarding" />
       </div>
 
       <p className="text-xs text-center text-zinc-400 leading-relaxed max-w-sm mx-auto">
