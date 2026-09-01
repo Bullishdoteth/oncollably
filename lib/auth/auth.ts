@@ -1,17 +1,9 @@
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
-import * as schema from '@/lib/db/schema/auth'
+import * as schema from '@/lib/db/schema'
 import { db } from '@/lib/db/db'
 
 export const auth = betterAuth({
-  secret: process.env.BETTER_AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
-
-  logger: {
-    disabled: false,
-    level: 'debug',
-  },
-
   database: drizzleAdapter(db, {
     provider: 'pg',
     schema: schema,
@@ -50,3 +42,4 @@ export const auth = betterAuth({
 })
 
 export type Session = typeof auth.$Infer.Session
+export type User = typeof auth.$Infer.Session.user
