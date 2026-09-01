@@ -39,6 +39,7 @@ export const account = pgTable('account', {
   password: text('password'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
+  issuer: text('issuer'),
 });
 
 export const verification = pgTable('verification', {
