@@ -8,6 +8,35 @@ export const auth = betterAuth({
     provider: 'pg',
     schema: schema,
   }),
+  user: {
+    additionalFields: {
+      onboarded: {
+        type: 'boolean',
+        required: false,
+        defaultValue: false,
+      },
+      workspaceType: {
+        type: 'string',
+        required: false,
+      },
+      handle: {
+        type: 'string',
+        required: false,
+      },
+      discord: {
+        type: 'string',
+        required: false,
+      },
+      twitter: {
+        type: 'string',
+        required: false,
+      },
+      bio: {
+        type: 'string',
+        required: false,
+      },
+    },
+  },
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID || '',

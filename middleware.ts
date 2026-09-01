@@ -11,6 +11,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith("/project")
 
   const isAuthRoute = pathname === "/sign-in" || pathname === "/create-account"
+  const isRootRoute = pathname === "/"
 
   // Retrieve session token from cookies
   const sessionToken =
@@ -34,6 +35,7 @@ export async function middleware(request: NextRequest) {
       })
 
       const sessionData = res.ok ? await res.json() : null
+      const user = sessionData?.user
 
       if (isProtectedRoute && (!sessionData || !sessionData.session)) {
         const signInUrl = new URL("/sign-in", request.url)
@@ -41,8 +43,14 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(signInUrl)
       }
 
-      if (isAuthRoute && sessionData?.session) {
-        return NextResponse.redirect(new URL("/onboarding", request.url))
+      if (sessionData?.session) {
+        const targetDashboard = user?.workspaceType ? `/${user.workspaceType}` : "/onboarding"
+        const destination = user?.onboarded ? targetDashboard : "/onboarding"
+
+        // If authenticated user visits root landing page or sign-in/create-account pages, redirect to workspace or onboarding
+        if (isRootRoute || isAuthRoute) {
+          return NextResponse.redirect(new URL(destination, request.url))
+        }
       }
     } catch (error) {
       console.error("Middleware session verification error:", error)
@@ -54,6 +62,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/",
     "/onboarding/:path*",
     "/cm/:path*",
     "/community/:path*",

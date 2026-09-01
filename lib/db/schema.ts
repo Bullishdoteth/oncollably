@@ -6,6 +6,12 @@ export const user = pgTable('user', {
   email: text('email').notNull().unique(),
   emailVerified: boolean('email_verified').notNull().default(false),
   image: text('image'),
+  onboarded: boolean('onboarded').notNull().default(false),
+  workspaceType: text('workspace_type'),
+  handle: text('handle'),
+  discord: text('discord'),
+  twitter: text('twitter'),
+  bio: text('bio'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
