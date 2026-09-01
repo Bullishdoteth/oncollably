@@ -1,5 +1,8 @@
+"use client"
+
 import React from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { Logo } from "@/components/ui/logo"
 
 export default function AuthLayout({
@@ -7,6 +10,44 @@ export default function AuthLayout({
 }: {
   children: React.ReactNode
 }) {
+  const pathname = usePathname()
+  const isOnboarding = pathname === "/onboarding"
+
+  if (isOnboarding) {
+    return (
+      <div className="min-h-screen bg-white text-zinc-900 flex flex-col justify-between selection:bg-zinc-100 selection:text-zinc-900">
+        {/* Top Header Bar */}
+        <header className="w-full max-w-7xl mx-auto px-6 sm:px-12 py-8 flex items-center justify-between border-b border-zinc-100">
+          <Logo />
+          <div className="text-xs text-zinc-400 font-medium tracking-wider uppercase">
+            Account Setup
+          </div>
+        </header>
+
+        {/* Center 1-Column Content Area */}
+        <main className="flex-1 flex items-center justify-center py-12 sm:py-20 px-6 sm:px-12">
+          <div className="w-full max-w-7xl mx-auto">
+            {children}
+          </div>
+        </main>
+
+        {/* Footer */}
+        <footer className="w-full max-w-7xl mx-auto px-6 sm:px-12 py-8 border-t border-zinc-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
+          <p>© {new Date().getFullYear()} Oncollably. All rights reserved.</p>
+          <div className="flex items-center gap-4">
+            <Link href="/terms" className="hover:text-zinc-900 transition-colors">
+              Terms of Service
+            </Link>
+            <span>•</span>
+            <Link href="/privacy-policy" className="hover:text-zinc-900 transition-colors">
+              Privacy Policy
+            </Link>
+          </div>
+        </footer>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-white text-zinc-900 grid grid-cols-1 lg:grid-cols-12 selection:bg-zinc-100 selection:text-zinc-900">
       
@@ -75,7 +116,7 @@ export default function AuthLayout({
 
         {/* Center Content / Auth Form Container */}
         <div className="flex-1 flex items-center justify-center py-8 sm:py-12">
-          <div className="w-full max-w-md">
+          <div className="w-full max-w-xl">
             {children}
           </div>
         </div>
@@ -99,3 +140,4 @@ export default function AuthLayout({
     </div>
   )
 }
+

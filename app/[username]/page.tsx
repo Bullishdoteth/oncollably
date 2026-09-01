@@ -88,13 +88,6 @@ export default async function CollabManagerProfilePage({ params }: ProfilePagePr
         {/* Top Cover Banner */}
         <div className="h-48 sm:h-56 w-full bg-gradient-to-r from-zinc-900 via-zinc-800 to-zinc-950 border-b border-zinc-200 relative overflow-hidden">
           <div className="absolute inset-0 opacity-25 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]" />
-          
-          {/* Top Right Floating Badge */}
-          <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 bg-white/90 backdrop-blur-md text-zinc-800 text-xs font-semibold rounded-full border border-white/40 shadow-xs">
-              Social Profile
-            </span>
-          </div>
         </div>
 
         {/* Main Content Container with Crisp Border Styling */}
@@ -235,16 +228,12 @@ export default async function CollabManagerProfilePage({ params }: ProfilePagePr
             <div className="flex items-center justify-between border-b border-zinc-100 pb-4">
               <div>
                 <h2 className="text-base sm:text-lg font-bold text-zinc-900 tracking-tight flex items-center gap-2">
-                  <Activity className="w-4 h-4 text-emerald-600" />
                   <span>Recent Activities & Work History</span>
                 </h2>
                 <p className="text-xs text-zinc-500 font-normal">
                   Verified campaign logs, spot distribution history, and partner deals.
                 </p>
               </div>
-              <span className="text-xs font-mono font-semibold px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full">
-                Live Audit
-              </span>
             </div>
 
             {/* Vertical History Line Timeline Graph */}
