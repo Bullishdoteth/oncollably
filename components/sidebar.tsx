@@ -78,11 +78,11 @@ const WORKSPACE_CONFIG: Record<
     icon: Briefcase,
     nav: [
       { label: "Dashboard", href: "/cm", icon: LayoutDashboard },
-      { label: "My Roster & Portfolio", href: "/cm/portfolio", icon: FolderGit2 },
-      { label: "Client Applications", href: "/cm/applications", icon: Send },
-      { label: "Active Deals", href: "/cm/collaborations", icon: Handshake },
-      { label: "Explore Communities", href: "/cm/communities", icon: Globe },
-      { label: "Collab Opportunities", href: "/cm/opportunities", icon: Rocket },
+      { label: "Portfolio", href: "/cm/portfolio", icon: FolderGit2 },
+      { label: "Applications", href: "/cm/applications", icon: Send },
+      { label: "Deals", href: "/cm/collaborations", icon: Handshake },
+      { label: "Communities", href: "/cm/communities", icon: Globe },
+      { label: "Opportunities", href: "/cm/opportunities", icon: Rocket },
       { label: "Settings", href: "/cm/settings", icon: Settings },
     ],
   },
@@ -232,9 +232,18 @@ export function Sidebar() {
                         <Link
                           key={ws.id}
                           href={wsPath}
-                          onClick={() => {
+                          onClick={async () => {
                             setIsWorkspaceMenuOpen(false)
                             setIsMobileOpen(false)
+                            try {
+                              await fetch("/api/workspaces/select", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ workspaceType: ws.type, handle: ws.handle }),
+                              })
+                            } catch (e) {
+                              console.error("Failed to set active workspace:", e)
+                            }
                           }}
                           className={`flex items-center justify-between p-2.5 text-xs font-medium transition-all ${
                             isSelected
@@ -316,7 +325,7 @@ export function Sidebar() {
 
                   <div className="border-t border-zinc-100 pt-1 mt-1">
                     <Link
-                      href="/onboarding"
+                      href="/onboarding?mode=new_workspace"
                       onClick={() => {
                         setIsWorkspaceMenuOpen(false)
                         setIsMobileOpen(false)

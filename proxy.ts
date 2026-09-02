@@ -11,50 +11,22 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/project")
 
   const isAuthRoute = pathname === "/sign-in" || pathname === "/create-account"
-  const isRootRoute = pathname === "/"
 
   // Retrieve session token from cookies
   const sessionToken =
     request.cookies.get("better-auth.session_token")?.value ||
     request.cookies.get("__Secure-better-auth.session_token")?.value
 
-  // Fast-path: if attempting to access a protected route with no session cookie, redirect immediately
+  // 1. Unauthenticated user trying to access protected route -> redirect to sign-in
   if (isProtectedRoute && !sessionToken) {
     const signInUrl = new URL("/sign-in", request.url)
     signInUrl.searchParams.set("callbackUrl", pathname)
     return NextResponse.redirect(signInUrl)
   }
 
-  // If a session cookie exists, verify validity via internal get-session API
-  if (sessionToken) {
-    try {
-      const res = await fetch(new URL("/api/auth/get-session", request.url), {
-        headers: {
-          cookie: request.headers.get("cookie") || "",
-        },
-      })
-
-      const sessionData = res.ok ? await res.json() : null
-      const user = sessionData?.user
-
-      if (isProtectedRoute && (!sessionData || !sessionData.session)) {
-        const signInUrl = new URL("/sign-in", request.url)
-        signInUrl.searchParams.set("callbackUrl", pathname)
-        return NextResponse.redirect(signInUrl)
-      }
-
-      if (sessionData?.session) {
-        const targetDashboard = user?.workspaceType ? `/${user.workspaceType}` : "/onboarding"
-        const destination = user?.onboarded ? targetDashboard : "/onboarding"
-
-        // If authenticated user visits root landing page or sign-in/create-account pages, redirect to workspace or onboarding
-        if (isRootRoute || isAuthRoute) {
-          return NextResponse.redirect(new URL(destination, request.url))
-        }
-      }
-    } catch (error) {
-      console.error("Middleware session verification error:", error)
-    }
+  // 2. Authenticated user visiting sign-in/create-account -> redirect to main workspace hub
+  if (isAuthRoute && sessionToken) {
+    return NextResponse.redirect(new URL("/project", request.url))
   }
 
   return NextResponse.next()
@@ -62,7 +34,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/",
     "/onboarding/:path*",
     "/cm/:path*",
     "/community/:path*",

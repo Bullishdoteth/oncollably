@@ -19,6 +19,7 @@ import {
   AtSign,
 } from "lucide-react"
 import { DiscordIcon, XSocialIcon } from "@/components/ui/icons"
+import { useSession } from "@/lib/auth/auth-client"
 
 interface CardOption {
   id: string
@@ -65,10 +66,25 @@ function OnboardingContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { data: sessionData, isPending: isSessionPending } = useSession()
 
   const [step, setStep] = useState<1 | 2>(1)
   const [selectedOptionId, setSelectedOptionId] = useState<string>("launch_campaign")
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const isNewWorkspaceMode = searchParams.get("mode") === "new_workspace"
+
+  // Redirect previously authenticated/onboarded users unless provisioning a new workspace
+  useEffect(() => {
+    if (!isSessionPending && sessionData?.user) {
+      const user = sessionData.user as any
+      const status = searchParams.get("status")
+      if (user.onboarded && !isNewWorkspaceMode && status !== "success") {
+        const targetPath = user.workspaceType ? `/${user.workspaceType}` : "/project"
+        router.replace(targetPath)
+      }
+    }
+  }, [sessionData, isSessionPending, isNewWorkspaceMode, searchParams, router])
 
   const [formData, setFormData] = useState({
     name: "",
@@ -250,6 +266,27 @@ function OnboardingContent() {
 
   return (
     <div className="w-full py-4">
+      {/* New Workspace Provisioning Banner */}
+      {isNewWorkspaceMode && (
+        <div className="mb-8 max-w-lg mx-auto p-4 bg-zinc-900 text-white flex items-center justify-between shadow-xs">
+          <div className="space-y-0.5">
+            <div className="text-xs font-bold uppercase tracking-wider">
+              Provisioning Additional Workspace
+            </div>
+            <p className="text-[11px] text-zinc-300">
+              Select workspace type (Project, Community, or Collab Manager)
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => router.back()}
+            className="text-xs font-semibold bg-white text-zinc-900 hover:bg-zinc-100 px-3 py-1.5 transition-colors cursor-pointer"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
       {/* Header Stepper with generous spacing */}
       <div className="mb-16 max-w-lg mx-auto space-y-3">
         <div className="flex items-center justify-between text-xs font-semibold text-zinc-400 uppercase tracking-widest">
