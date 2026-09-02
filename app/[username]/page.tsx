@@ -131,8 +131,8 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
                 <MapPin className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-zinc-400 text-[10px] font-semibold uppercase tracking-wider">Ecosystems</p>
-                <p className="font-bold text-zinc-900">{workspaceData.ecosystems || "Multi-Chain"}</p>
+                <p className="text-zinc-400 text-[10px] font-semibold uppercase tracking-wider">Status</p>
+                <p className="font-bold text-zinc-900">Verified Active</p>
               </div>
             </div>
             <div className="p-4 flex items-center gap-3">

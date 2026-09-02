@@ -170,7 +170,7 @@ export async function updateApplicationStatusAction(
  * Add CM Portfolio Item
  */
 export async function addPortfolioItemAction(data: {
-  userId: string;
+  userId?: string;
   workspaceId?: string;
   title: string;
   role: string;
@@ -182,9 +182,21 @@ export async function addPortfolioItemAction(data: {
   try {
     const id = `pf_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
+    let resolvedUserId = data.userId;
+    if (!resolvedUserId && data.workspaceId) {
+      const [ws] = await db.select().from(workspace).where(eq(workspace.id, data.workspaceId));
+      if (ws) {
+        resolvedUserId = ws.userId;
+      }
+    }
+
+    if (!resolvedUserId) {
+      return { success: false, error: "User session or workspace ID required" };
+    }
+
     await db.insert(cmPortfolio).values({
       id,
-      userId: data.userId,
+      userId: resolvedUserId,
       workspaceId: data.workspaceId || null,
       title: data.title,
       role: data.role,

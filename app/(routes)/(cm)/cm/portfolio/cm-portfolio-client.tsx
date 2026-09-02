@@ -33,7 +33,6 @@ export function CmPortfolioClient({ initialItems = [] }: CmPortfolioClientProps)
 
     setIsSubmitting(true)
     const res = await addPortfolioItemAction({
-      userId: "usr_demo_1",
       workspaceId: "ws_collabmanager",
       title: form.title,
       role: form.role,
