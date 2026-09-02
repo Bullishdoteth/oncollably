@@ -1,55 +1,108 @@
-"use client"
-
 import React from "react"
+import { headers } from "next/headers"
 import Link from "next/link"
-import { Layers, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react"
+import { Handshake, Globe, CheckCircle2, Clock, ArrowRight } from "lucide-react"
+import { auth } from "@/lib/auth/auth"
+import { ensureSeedData } from "@/lib/db/seed"
+import { getUserWorkspaces, getWorkspaceByHandle, getApplicationsForProject } from "@/lib/db/queries"
 
-export default function Page() {
+export default async function ProjectCollaborationsPage() {
+  await ensureSeedData()
+
+  const reqHeaders = await headers()
+  const session = await auth.api.getSession({ headers: reqHeaders })
+
+  let currentWorkspace = null
+  if (session?.user) {
+    const userWorkspaces = await getUserWorkspaces(session.user.id)
+    currentWorkspace = userWorkspaces.find((w) => w.type === "project") || userWorkspaces[0]
+  }
+  if (!currentWorkspace) {
+    currentWorkspace = await getWorkspaceByHandle("cybersamurai")
+  }
+
+  const workspaceId = currentWorkspace?.id || "ws_cybersamurai"
+  const applications = await getApplicationsForProject(workspaceId)
+  const acceptedCollabs = applications.filter((a) => a.status === "accepted")
+
   return (
     <div className="w-full max-w-6xl mx-auto py-8 px-6 space-y-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-100 pb-6">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-zinc-100 text-zinc-700 border border-zinc-200">
-              Project Workspace
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              Active Collaborations
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">
-            Active Collaborations
+            Approved Community Collaborations
           </h1>
           <p className="text-sm text-zinc-500 font-normal">
-            Track all ongoing project partnerships and giveaway deals.
+            Track all approved giveaway spot allocations granted to partner DAOs and alpha groups.
           </p>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
-          <button className="px-4 py-2 rounded-xl bg-zinc-900 text-white text-xs font-semibold hover:bg-black transition-all">
-            Action Button
-          </button>
-        </div>
+        <Link
+          href="/project/applications"
+          className="px-4 py-2.5 rounded-xl bg-zinc-900 text-white text-xs font-semibold hover:bg-black transition-all flex items-center gap-2 shadow-xs cursor-pointer"
+        >
+          <span>View Inbox</span>
+          <ArrowRight className="w-4 h-4" />
+        </Link>
       </div>
 
-      {/* Main Content Placeholder Card */}
+      {/* Accepted Collaborations List */}
       <div className="p-8 rounded-3xl bg-white border border-zinc-200/80 shadow-xs space-y-6">
-        <div className="flex items-center gap-3 text-zinc-900 font-semibold text-sm">
-          <Sparkles className="w-4 h-4 text-zinc-700" />
-          <span>Active Collaborations Workspace</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 text-zinc-900 font-bold text-sm">
+            <Handshake className="w-4 h-4 text-emerald-600" />
+            <span>Active Partner Deals ({acceptedCollabs.length})</span>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-          <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-100 space-y-1">
-            <span className="text-xs text-zinc-400 font-medium">Status</span>
-            <div className="text-lg font-bold text-zinc-900">Active</div>
-          </div>
-          <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-100 space-y-1">
-            <span className="text-xs text-zinc-400 font-medium">Total Records</span>
-            <div className="text-lg font-bold text-zinc-900">0</div>
-          </div>
-          <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-100 space-y-1">
-            <span className="text-xs text-zinc-400 font-medium">Last Updated</span>
-            <div className="text-lg font-bold text-zinc-900">Just Now</div>
-          </div>
+        <div className="divide-y divide-zinc-100">
+          {acceptedCollabs.length > 0 ? (
+            acceptedCollabs.map((app) => (
+              <div key={app.id} className="py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1 min-w-0">
+                  <div className="flex items-center gap-2.5">
+                    <h3 className="text-sm font-bold text-zinc-900">{app.applicantWorkspaceId.replace("ws_", "").toUpperCase()}</h3>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      ✓ {app.requestedSpots} Spots Granted
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-500">{app.pitchMessage || "Approved community partner allocation."}</p>
+                </div>
+
+                <div className="flex items-center gap-3 text-xs">
+                  {app.discordInvite && (
+                    <a
+                      href={app.discordInvite.startsWith("http") ? app.discordInvite : `https://${app.discordInvite}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-semibold transition-colors flex items-center gap-1"
+                    >
+                      <Globe className="w-3.5 h-3.5" />
+                      <span>Discord</span>
+                    </a>
+                  )}
+                  <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Active Deal
+                  </span>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="py-12 text-center space-y-2">
+              <Handshake className="w-8 h-8 text-zinc-300 mx-auto" />
+              <p className="text-sm font-semibold text-zinc-700">No approved collaborations yet</p>
+              <p className="text-xs text-zinc-400">
+                Review pending applications in your Inbox to accept community spot requests.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

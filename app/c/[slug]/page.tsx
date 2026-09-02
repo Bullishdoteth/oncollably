@@ -1,4 +1,5 @@
 import type { Metadata } from "next"
+import { notFound } from "next/navigation"
 import { constructMetadata } from "@/lib/og-builder"
 import { PublicProjectClient } from "./public-project-client"
 import { ensureSeedData } from "@/lib/db/seed"
@@ -10,14 +11,22 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const resolvedParams = await params
-  const rawSlug = resolvedParams.slug || "cybersamurai"
+  const rawSlug = resolvedParams.slug || ""
   const slug = decodeURIComponent(rawSlug)
-  const projectTitle = slug
-    ? slug.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
-    : "CyberSamurai"
 
+  const projectWorkspace = await getWorkspaceByHandle(slug)
+
+  if (!projectWorkspace) {
+    return constructMetadata({
+      title: "Project Not Found | Oncollably",
+      description: "The requested project channel does not exist on Oncollably.",
+      path: `/c/${slug}`,
+    })
+  }
+
+  const projectTitle = projectWorkspace.name
   const title = `${projectTitle} | Web3 Collab Campaign & Whitelist Allocations`
-  const description = `Apply for ${projectTitle} whitelist spot allocations, collab campaigns, and community partnerships on Oncollably.`
+  const description = projectWorkspace.bio || `Apply for ${projectTitle} whitelist spot allocations, collab campaigns, and community partnerships on Oncollably.`
 
   return constructMetadata({
     title,
@@ -35,9 +44,13 @@ export default async function PublicProjectPage({ params }: PageProps) {
   await ensureSeedData()
 
   const projectWorkspace = await getWorkspaceByHandle(slug)
-  const campaigns = projectWorkspace
-    ? await getCampaignsForWorkspace(projectWorkspace.id)
-    : []
+
+  // If project workspace does not exist in DB, invoke Next.js notFound()
+  if (!projectWorkspace) {
+    notFound()
+  }
+
+  const campaigns = await getCampaignsForWorkspace(projectWorkspace.id)
 
   return (
     <PublicProjectClient

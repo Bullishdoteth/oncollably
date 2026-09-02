@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
@@ -25,7 +25,7 @@ import {
   X,
   Plus,
   LogOut,
-  ShieldCheck
+  ShieldCheck,
 } from "lucide-react"
 import { Logo } from "@/components/ui/logo"
 
@@ -40,14 +40,12 @@ interface NavItem {
 const WORKSPACE_CONFIG: Record<
   WorkspaceType,
   {
-    name: string
     roleLabel: string
     icon: any
     nav: NavItem[]
   }
 > = {
   project: {
-    name: "CyberSamurai NFT",
     roleLabel: "Project Workspace",
     icon: Rocket,
     nav: [
@@ -62,7 +60,6 @@ const WORKSPACE_CONFIG: Record<
     ],
   },
   community: {
-    name: "Alpha Seekers DAO",
     roleLabel: "Community Hub",
     icon: ShieldCheck,
     nav: [
@@ -77,7 +74,6 @@ const WORKSPACE_CONFIG: Record<
     ],
   },
   cm: {
-    name: "Alex (Apex CM)",
     roleLabel: "Collab Manager",
     icon: Briefcase,
     nav: [
@@ -96,11 +92,29 @@ export function Sidebar() {
   const pathname = usePathname()
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [isWorkspaceMenuOpen, setIsWorkspaceMenuOpen] = useState(false)
+  const [dbWorkspaces, setDbWorkspaces] = useState<any[]>([])
 
   const { data: session } = useSession()
   const userName = session?.user?.name || "Alex Rivera"
   const userEmail = session?.user?.email || "alex@oncollably.com"
+  const userImage = session?.user?.image || ""
   const initial = userName.charAt(0).toUpperCase()
+
+  // Fetch live user workspaces from Neon Postgres
+  useEffect(() => {
+    async function loadWorkspaces() {
+      try {
+        const res = await fetch("/api/workspaces")
+        const data = await res.json()
+        if (data.workspaces) {
+          setDbWorkspaces(data.workspaces)
+        }
+      } catch (err) {
+        console.error("Failed to load live workspaces:", err)
+      }
+    }
+    loadWorkspaces()
+  }, [])
 
   const handleSignOut = async () => {
     await signOut()
@@ -114,7 +128,21 @@ export function Sidebar() {
     ? "cm"
     : "project"
 
-  const currentWorkspace = WORKSPACE_CONFIG[activeSpace]
+  const spaceConfig = WORKSPACE_CONFIG[activeSpace]
+
+  // Find matching workspace from DB for current space type
+  const currentDbWorkspace = dbWorkspaces.find((w) => w.type === activeSpace)
+
+  const activeWorkspaceName =
+    currentDbWorkspace?.name ||
+    (activeSpace === "project"
+      ? "CyberSamurai NFT"
+      : activeSpace === "community"
+      ? "Alpha Seekers DAO"
+      : `${userName} (Collab Manager)`)
+
+  const activeWorkspaceAvatar = currentDbWorkspace?.avatarUrl || ""
+  const activeWorkspaceHandle = currentDbWorkspace?.handle || ""
 
   return (
     <>
@@ -151,7 +179,7 @@ export function Sidebar() {
             <Logo />
           </div>
 
-          {/* Workspace Switcher */}
+          {/* Live Workspace Switcher ("Workspace Swatch") */}
           <div className="p-5 relative">
             <button
               type="button"
@@ -159,15 +187,28 @@ export function Sidebar() {
               className="w-full p-3.5 rounded-2xl bg-zinc-50/80 hover:bg-zinc-100/80 border border-zinc-200/60 transition-all text-left flex items-center justify-between group cursor-pointer"
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-8 h-8 rounded-xl bg-zinc-900 text-white flex items-center justify-center shrink-0">
-                  <currentWorkspace.icon className="w-4 h-4 stroke-[1.75]" />
-                </div>
+                {activeWorkspaceAvatar ? (
+                  <img
+                    src={activeWorkspaceAvatar}
+                    alt={activeWorkspaceName}
+                    className="w-8 h-8 rounded-xl object-cover border border-zinc-200 shrink-0"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-xl bg-zinc-900 text-white flex items-center justify-center shrink-0">
+                    <spaceConfig.icon className="w-4 h-4 stroke-[1.75]" />
+                  </div>
+                )}
                 <div className="min-w-0">
                   <div className="text-xs font-bold text-zinc-900 truncate">
-                    {currentWorkspace.name}
+                    {activeWorkspaceName}
                   </div>
-                  <div className="text-[11px] font-medium text-zinc-400 truncate">
-                    {currentWorkspace.roleLabel}
+                  <div className="text-[11px] font-medium text-zinc-400 truncate flex items-center gap-1">
+                    <span>{spaceConfig.roleLabel}</span>
+                    {activeWorkspaceHandle && (
+                      <span className="text-[10px] text-zinc-400 font-mono">
+                        @{activeWorkspaceHandle}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -178,7 +219,7 @@ export function Sidebar() {
               />
             </button>
 
-            {/* Workspace Switcher Dropdown */}
+            {/* Live Workspace Switcher Dropdown */}
             <AnimatePresence>
               {isWorkspaceMenuOpen && (
                 <motion.div
@@ -189,68 +230,111 @@ export function Sidebar() {
                   className="absolute left-5 right-5 top-22 bg-white border border-zinc-200/80 rounded-2xl shadow-xl p-2 z-50 space-y-1"
                 >
                   <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
-                    Switch Space
+                    Active Workspaces
                   </div>
 
-                  <Link
-                    href="/project"
-                    onClick={() => {
-                      setIsWorkspaceMenuOpen(false)
-                      setIsMobileOpen(false)
-                    }}
-                    className={`flex items-center gap-3 p-2.5 rounded-xl text-xs font-medium transition-all ${
-                      activeSpace === "project"
-                        ? "bg-zinc-900 text-white font-semibold"
-                        : "text-zinc-700 hover:bg-zinc-100/70"
-                    }`}
-                  >
-                    <Rocket className="w-4 h-4 shrink-0 stroke-[1.75]" />
-                    <span>Project Workspace</span>
-                  </Link>
+                  {dbWorkspaces.length > 0 ? (
+                    dbWorkspaces.map((ws) => {
+                      const wsPath = ws.type === "community" ? "/community" : ws.type === "cm" ? "/cm" : "/project"
+                      const isSelected = activeSpace === ws.type
 
-                  <Link
-                    href="/community"
-                    onClick={() => {
-                      setIsWorkspaceMenuOpen(false)
-                      setIsMobileOpen(false)
-                    }}
-                    className={`flex items-center gap-3 p-2.5 rounded-xl text-xs font-medium transition-all ${
-                      activeSpace === "community"
-                        ? "bg-zinc-900 text-white font-semibold"
-                        : "text-zinc-700 hover:bg-zinc-100/70"
-                    }`}
-                  >
-                    <ShieldCheck className="w-4 h-4 shrink-0 stroke-[1.75]" />
-                    <span>Community Hub</span>
-                  </Link>
+                      return (
+                        <Link
+                          key={ws.id}
+                          href={wsPath}
+                          onClick={() => {
+                            setIsWorkspaceMenuOpen(false)
+                            setIsMobileOpen(false)
+                          }}
+                          className={`flex items-center justify-between p-2.5 rounded-xl text-xs font-medium transition-all ${
+                            isSelected
+                              ? "bg-zinc-900 text-white font-semibold"
+                              : "text-zinc-700 hover:bg-zinc-100/70"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            {ws.avatarUrl ? (
+                              <img
+                                src={ws.avatarUrl}
+                                alt={ws.name}
+                                className="w-5 h-5 rounded-lg object-cover border border-zinc-200/60 shrink-0"
+                              />
+                            ) : (
+                              <Rocket className="w-4 h-4 shrink-0 stroke-[1.75]" />
+                            )}
+                            <div className="truncate min-w-0">
+                              <div className="truncate font-semibold">{ws.name}</div>
+                              <div className={`text-[10px] ${isSelected ? "text-zinc-300" : "text-zinc-400"}`}>
+                                {ws.type.toUpperCase()} • @{ws.handle}
+                              </div>
+                            </div>
+                          </div>
+                        </Link>
+                      )
+                    })
+                  ) : (
+                    <>
+                      <Link
+                        href="/project"
+                        onClick={() => {
+                          setIsWorkspaceMenuOpen(false)
+                          setIsMobileOpen(false)
+                        }}
+                        className={`flex items-center gap-3 p-2.5 rounded-xl text-xs font-medium transition-all ${
+                          activeSpace === "project"
+                            ? "bg-zinc-900 text-white font-semibold"
+                            : "text-zinc-700 hover:bg-zinc-100/70"
+                        }`}
+                      >
+                        <Rocket className="w-4 h-4 shrink-0 stroke-[1.75]" />
+                        <span>Project Workspace</span>
+                      </Link>
 
-                  <Link
-                    href="/cm"
-                    onClick={() => {
-                      setIsWorkspaceMenuOpen(false)
-                      setIsMobileOpen(false)
-                    }}
-                    className={`flex items-center gap-3 p-2.5 rounded-xl text-xs font-medium transition-all ${
-                      activeSpace === "cm"
-                        ? "bg-zinc-900 text-white font-semibold"
-                        : "text-zinc-700 hover:bg-zinc-100/70"
-                    }`}
-                  >
-                    <Briefcase className="w-4 h-4 shrink-0 stroke-[1.75]" />
-                    <span>Collab Manager</span>
-                  </Link>
+                      <Link
+                        href="/community"
+                        onClick={() => {
+                          setIsWorkspaceMenuOpen(false)
+                          setIsMobileOpen(false)
+                        }}
+                        className={`flex items-center gap-3 p-2.5 rounded-xl text-xs font-medium transition-all ${
+                          activeSpace === "community"
+                            ? "bg-zinc-900 text-white font-semibold"
+                            : "text-zinc-700 hover:bg-zinc-100/70"
+                        }`}
+                      >
+                        <ShieldCheck className="w-4 h-4 shrink-0 stroke-[1.75]" />
+                        <span>Community Hub</span>
+                      </Link>
 
-                  <div className="pt-1 border-t border-zinc-100">
+                      <Link
+                        href="/cm"
+                        onClick={() => {
+                          setIsWorkspaceMenuOpen(false)
+                          setIsMobileOpen(false)
+                        }}
+                        className={`flex items-center gap-3 p-2.5 rounded-xl text-xs font-medium transition-all ${
+                          activeSpace === "cm"
+                            ? "bg-zinc-900 text-white font-semibold"
+                            : "text-zinc-700 hover:bg-zinc-100/70"
+                        }`}
+                      >
+                        <Briefcase className="w-4 h-4 shrink-0 stroke-[1.75]" />
+                        <span>Collab Manager</span>
+                      </Link>
+                    </>
+                  )}
+
+                  <div className="border-t border-zinc-100 pt-1 mt-1">
                     <Link
                       href="/onboarding"
                       onClick={() => {
                         setIsWorkspaceMenuOpen(false)
                         setIsMobileOpen(false)
                       }}
-                      className="flex items-center gap-2 p-2 rounded-xl text-xs font-medium text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50 transition-colors"
+                      className="flex items-center gap-2.5 p-2 rounded-xl text-xs font-semibold text-zinc-900 hover:bg-zinc-100 transition-colors"
                     >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Create Workspace</span>
+                      <Plus className="w-4 h-4 text-zinc-600" />
+                      <span>Create New Workspace</span>
                     </Link>
                   </div>
                 </motion.div>
@@ -259,44 +343,48 @@ export function Sidebar() {
           </div>
 
           {/* Navigation Links */}
-          <nav className="flex-1 px-5 py-2 space-y-1.5 overflow-y-auto">
-            {currentWorkspace.nav.map((item) => {
+          <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto">
+            <div className="px-3 pb-2 text-[11px] font-semibold text-zinc-400 uppercase tracking-widest">
+              Navigation
+            </div>
+            {spaceConfig.nav.map((item) => {
               const Icon = item.icon
-              const isActive =
-                item.href === `/${activeSpace}`
-                  ? pathname === `/${activeSpace}`
-                  : pathname.startsWith(item.href)
+              const isActive = pathname === item.href
 
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsMobileOpen(false)}
-                  className={`group flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
                     isActive
-                      ? "bg-zinc-900 text-white shadow-xs"
-                      : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100/60"
+                      ? "bg-zinc-900 text-white shadow-2xs"
+                      : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100/80"
                   }`}
                 >
-                  <Icon
-                    className={`w-4 h-4 shrink-0 stroke-[1.75] ${
-                      isActive ? "text-white" : "text-zinc-400 group-hover:text-zinc-900"
-                    }`}
-                  />
-                  <span className="truncate">{item.label}</span>
+                  <Icon className="w-4 h-4 stroke-[1.75]" />
+                  <span>{item.label}</span>
                 </Link>
               )
             })}
           </nav>
         </div>
 
-        {/* Minimal User Profile Footer */}
-        <div className="p-5 border-t border-zinc-100 bg-white">
-          <div className="p-3 rounded-2xl bg-zinc-50/80 border border-zinc-200/60 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-xs shrink-0">
-                {initial}
-              </div>
+        {/* User Profile Footer */}
+        <div className="p-4 border-t border-zinc-100">
+          <div className="p-3 rounded-2xl bg-zinc-50/80 border border-zinc-200/50 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              {userImage ? (
+                <img
+                  src={userImage}
+                  alt={userName}
+                  className="w-8 h-8 rounded-full object-cover border border-zinc-200 shrink-0"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-zinc-900 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                  {initial}
+                </div>
+              )}
               <div className="min-w-0">
                 <div className="text-xs font-bold text-zinc-900 truncate">
                   {userName}
@@ -310,8 +398,8 @@ export function Sidebar() {
             <button
               type="button"
               onClick={handleSignOut}
+              className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-900 hover:bg-zinc-200/60 transition-colors cursor-pointer"
               title="Sign Out"
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-900 hover:bg-zinc-200/60 transition-colors cursor-pointer"
             >
               <LogOut className="w-4 h-4 stroke-[1.75]" />
             </button>

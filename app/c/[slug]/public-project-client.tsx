@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import {
   Rocket,
   ShieldCheck,
+  ShieldAlert,
   Globe,
   ArrowRight,
   X,
@@ -17,6 +18,7 @@ import { Logo } from "@/components/ui/logo"
 import { DiscordIcon, XSocialIcon } from "@/components/ui/icons"
 import { Footer } from "@/components/landing/footer"
 import { submitApplicationAction } from "@/lib/db/actions"
+import { verifyProjectWorkspace } from "@/services/verification"
 
 interface PublicProjectClientProps {
   slug: string
@@ -48,15 +50,11 @@ export function PublicProjectClient({
     pitchMessage: "",
   })
 
-  const projectTitle =
-    initialWorkspace?.name ||
-    (slug ? slug.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()) : "CyberSamurai")
+  const projectTitle = initialWorkspace?.name || slug
+  const projectBio = initialWorkspace?.bio || ""
+  const ecosystems = initialWorkspace?.ecosystems || ""
+  const avatarUrl = initialWorkspace?.avatarUrl || initialWorkspace?.image || ""
 
-  const projectBio =
-    initialWorkspace?.bio ||
-    "Gaming project building on Solana. Request whitelist spot allocations below for your community or alpha group."
-
-  const ecosystems = initialWorkspace?.ecosystems || "Solana Ecosystem • NFT & Gaming"
   const discordUrl = initialWorkspace?.discord
     ? (initialWorkspace.discord.startsWith("http") ? initialWorkspace.discord : `https://${initialWorkspace.discord}`)
     : "https://discord.com"
@@ -112,10 +110,23 @@ export function PublicProjectClient({
   return (
     <div className="min-h-screen bg-white text-zinc-900 selection:bg-zinc-100 selection:text-zinc-900 flex flex-col justify-between">
       <div>
-        {/* Banner Section with Header inside + Glassmorphism Effect */}
+        {/* Banner Section with Dynamic Avatar Color Blur & Glassmorphism Effect */}
         <div className="relative w-full bg-gradient-to-br from-zinc-950 via-zinc-900 to-black text-white overflow-hidden">
-          {/* Subtle Ambient Glow */}
-          <div className="absolute top-0 right-1/4 w-96 h-96 bg-zinc-800/40 rounded-full blur-3xl pointer-events-none" />
+          {/* Dynamic Ambient Glow from Avatar Image */}
+          {avatarUrl ? (
+            <>
+              <div
+                className="absolute -top-24 -left-24 w-[600px] h-[600px] rounded-full blur-[140px] opacity-40 pointer-events-none bg-cover bg-center scale-150 transition-all duration-700"
+                style={{ backgroundImage: `url(${avatarUrl})` }}
+              />
+              <div
+                className="absolute top-10 right-0 w-[500px] h-[500px] rounded-full blur-[150px] opacity-30 pointer-events-none bg-cover bg-center transition-all duration-700"
+                style={{ backgroundImage: `url(${avatarUrl})` }}
+              />
+            </>
+          ) : (
+            <div className="absolute top-0 right-1/4 w-96 h-96 bg-zinc-800/40 rounded-full blur-3xl pointer-events-none" />
+          )}
 
           {/* Top Header inside Banner with Glass Blur Effect */}
           <header className="w-full border-b border-white/10 bg-white/5 backdrop-blur-md sticky top-0 z-30">
@@ -123,18 +134,15 @@ export function PublicProjectClient({
               <Logo textClassName="text-white text-xl font-extrabold" />
 
               <div className="flex items-center gap-4">
-                <span className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 text-white border border-white/15 backdrop-blur-sm">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                  Verified Project
-                </span>
-
-                <button
-                  onClick={() => setIsApplyModalOpen(true)}
-                  className="px-4 py-2.5 rounded-xl bg-white hover:bg-zinc-100 text-zinc-900 text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
-                >
-                  <span>Apply for Collab</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+                {initialCampaigns.length > 0 && (
+                  <button
+                    onClick={() => setIsApplyModalOpen(true)}
+                    className="px-4 py-2.5 rounded-xl bg-white hover:bg-zinc-100 text-zinc-900 text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <span>Apply for Collab</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </div>
             </div>
           </header>
@@ -144,16 +152,69 @@ export function PublicProjectClient({
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-8">
               <div className="space-y-4 max-w-2xl">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-zinc-800 border border-zinc-700 text-emerald-400 flex items-center justify-center font-bold text-2xl shrink-0 shadow-lg">
-                    {projectTitle.charAt(0)}
-                  </div>
+                  {/* Dynamic Logo Avatar Image fetched from DB */}
+                  {avatarUrl ? (
+                    <img
+                      src={avatarUrl}
+                      alt={projectTitle}
+                      className="w-16 h-16 rounded-2xl object-cover border-2 border-white/20 shadow-2xl shrink-0 bg-zinc-900"
+                    />
+                  ) : (
+                    <div className="w-16 h-16 rounded-2xl bg-zinc-800 border border-zinc-700 text-emerald-400 flex items-center justify-center font-bold text-2xl shrink-0 shadow-lg">
+                      {projectTitle.charAt(0)}
+                    </div>
+                  )}
 
                   <div className="space-y-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2.5 flex-wrap">
                       <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">
                         {projectTitle}
                       </h1>
-                      <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+                      {(() => {
+                        const verification = verifyProjectWorkspace(initialWorkspace)
+                        if (verification.isVerified) {
+                          return (
+                            <div className="group relative inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 backdrop-blur-sm cursor-help">
+                              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                              <span>Verified Project</span>
+
+                              {/* Rich Verification Breakdown Tooltip */}
+                              <div className="absolute left-0 top-full mt-2 w-64 p-3.5 rounded-2xl bg-zinc-900 border border-zinc-700 text-xs text-zinc-300 shadow-2xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-40 space-y-2">
+                                <div className="font-bold text-white flex items-center justify-between border-b border-zinc-800 pb-1.5">
+                                  <span>Project Verification</span>
+                                  <span className="text-emerald-400 font-semibold">✓ Verified</span>
+                                </div>
+                                <div className="space-y-1.5 text-[11px]">
+                                  <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
+                                    <span>✓</span> Project Access Pass ($10)
+                                  </div>
+                                  {verification.checks.xConnected && (
+                                    <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
+                                      <span>✓</span> X (Twitter) Account
+                                    </div>
+                                  )}
+                                  {verification.checks.discordConnected && (
+                                    <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
+                                      <span>✓</span> Discord Server
+                                    </div>
+                                  )}
+                                  {verification.checks.websiteConnected && (
+                                    <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
+                                      <span>✓</span> Personal Website
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        }
+                        return (
+                          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-zinc-800/80 text-zinc-400 border border-zinc-700/80 backdrop-blur-sm">
+                            <ShieldAlert className="w-4 h-4 text-zinc-400 shrink-0" />
+                            <span>Unverified</span>
+                          </div>
+                        )
+                      })()}
                     </div>
                     <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">
                       {ecosystems}

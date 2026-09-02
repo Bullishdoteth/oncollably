@@ -217,6 +217,8 @@ export async function updateWorkspaceSettingsAction(
     bio?: string;
     discord?: string;
     twitter?: string;
+    website?: string;
+    avatarUrl?: string;
     ecosystems?: string;
   }
 ) {

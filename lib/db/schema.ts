@@ -67,6 +67,7 @@ export const workspace = pgTable('workspace', {
   type: text('type').notNull(), // 'project', 'community', 'cm'
   discord: text('discord'),
   twitter: text('twitter'),
+  website: text('website'),
   bio: text('bio'),
   ecosystems: text('ecosystems'), // JSON string array or comma-separated
   avatarUrl: text('avatar_url'),
