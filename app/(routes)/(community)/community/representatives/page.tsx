@@ -1,55 +1,78 @@
-"use client"
-
 import React from "react"
-import Link from "next/link"
-import { Layers, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react"
+import { Users, UserCheck } from "lucide-react"
+import { headers } from "next/headers"
+import { auth } from "@/lib/auth/auth"
+import { ensureSeedData } from "@/lib/db/seed"
+import { getTeamMembers } from "@/lib/db/queries"
 
-export default function Page() {
+export default async function CommunityRepsPage() {
+  await ensureSeedData()
+
+  const reqHeaders = await headers()
+  const session = await auth.api.getSession({ headers: reqHeaders })
+
+  const workspaceId = "ws_alphaseekers"
+  const dbMembers = await getTeamMembers(workspaceId)
+
+  const reps = dbMembers.length > 0 ? dbMembers.map((m) => ({
+    id: m.id,
+    displayName: m.email.split("@")[0],
+    email: m.email,
+    role: m.role || "Representative",
+  })) : [
+    {
+      id: "rep_1",
+      displayName: session?.user?.name || "Alpha Manager",
+      email: session?.user?.email || "rep@alphaseekers.io",
+      role: "Head Representative",
+    }
+  ]
+
   return (
-    <div className="w-full max-w-6xl mx-auto py-8 px-6 space-y-8">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-100 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-200/80 pb-6">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-zinc-100 text-zinc-700 border border-zinc-200">
-              Community Hub
-            </span>
+          <div className="flex items-center gap-2 text-xs font-semibold text-zinc-900">
+            <Users className="w-4 h-4 text-zinc-500" />
+            <span>Community Roster</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
             Community Representatives
           </h1>
-          <p className="text-sm text-zinc-500 font-normal">
+          <p className="text-xs text-zinc-500 font-normal">
             Manage staff, collab managers, and moderators representing your community.
           </p>
         </div>
-
-        <div className="flex items-center gap-3 shrink-0">
-          <button className="px-4 py-2 rounded-xl bg-zinc-900 text-white text-xs font-semibold hover:bg-black transition-all">
-            Action Button
-          </button>
-        </div>
       </div>
 
-      {/* Main Content Placeholder Card */}
-      <div className="p-8 rounded-3xl bg-white border border-zinc-200/80 shadow-xs space-y-6">
-        <div className="flex items-center gap-3 text-zinc-900 font-semibold text-sm">
-          <Sparkles className="w-4 h-4 text-zinc-700" />
-          <span>Community Representatives Workspace</span>
+      {/* Roster Card */}
+      <div className="p-6 bg-white border border-zinc-200/80 shadow-2xs space-y-6">
+        <div className="flex items-center justify-between border-b border-zinc-100 pb-4">
+          <div className="flex items-center gap-2 text-xs font-semibold text-zinc-900">
+            <UserCheck className="w-4 h-4 text-zinc-500" />
+            <span>Verified Representatives ({reps.length})</span>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-          <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-100 space-y-1">
-            <span className="text-xs text-zinc-400 font-medium">Status</span>
-            <div className="text-lg font-bold text-zinc-900">Active</div>
-          </div>
-          <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-100 space-y-1">
-            <span className="text-xs text-zinc-400 font-medium">Total Records</span>
-            <div className="text-lg font-bold text-zinc-900">0</div>
-          </div>
-          <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-100 space-y-1">
-            <span className="text-xs text-zinc-400 font-medium">Last Updated</span>
-            <div className="text-lg font-bold text-zinc-900">Just Now</div>
-          </div>
+        <div className="divide-y divide-zinc-100">
+          {reps.map((rep) => (
+            <div key={rep.id} className="py-3.5 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-zinc-900 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                  {rep.displayName.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-zinc-900">{rep.displayName}</div>
+                  <div className="text-xs text-zinc-400">{rep.email}</div>
+                </div>
+              </div>
+
+              <span className="px-2.5 py-0.5 text-xs font-semibold bg-zinc-100 text-zinc-800 border border-zinc-200">
+                {rep.role}
+              </span>
+            </div>
+          ))}
         </div>
       </div>
     </div>

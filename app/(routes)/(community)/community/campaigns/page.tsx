@@ -1,90 +1,90 @@
 import React from "react"
 import Link from "next/link"
-import { Rocket, ArrowRight, Clock, ShieldCheck } from "lucide-react"
+import { Clock, ArrowRight, Compass } from "lucide-react"
 import { ensureSeedData } from "@/lib/db/seed"
 import { getAllActiveCampaigns } from "@/lib/db/queries"
 
-export default async function CommunityBrowseCampaignsPage() {
+export default async function CommunityCampaignsPage() {
   await ensureSeedData()
 
   const campaigns = await getAllActiveCampaigns()
 
   return (
-    <div className="w-full max-w-6xl mx-auto py-8 px-6 space-y-8">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-100 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-200/80 pb-6">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-zinc-100 text-zinc-700 border border-zinc-200">
-              Community Browse
-            </span>
+          <div className="flex items-center gap-2 text-xs font-semibold text-zinc-900">
+            <Compass className="w-4 h-4 text-zinc-500" />
+            <span>Explore Opportunities</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">
-            Browse Project Campaigns
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
+            Project Campaigns
           </h1>
-          <p className="text-sm text-zinc-500 font-normal">
-            Discover verified Web3 projects offering guaranteed whitelist spot allocations for DAOs.
+          <p className="text-xs text-zinc-500 font-normal">
+            Explore live giveaways and request whitelist allocations for your community.
           </p>
         </div>
       </div>
 
-      {/* Grid of active campaigns */}
+      {/* Campaigns Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {campaigns.length > 0 ? (
           campaigns.map((cmp) => (
             <div
               key={cmp.id}
-              className="p-7 rounded-3xl bg-white border border-zinc-200/80 shadow-2xs space-y-6 hover:border-zinc-300 transition-all flex flex-col justify-between"
+              className="p-6 bg-white border border-zinc-200/80 shadow-2xs space-y-5 hover:border-zinc-300 transition-all flex flex-col justify-between"
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    {cmp.workspaceName}
+                  <span className="px-2.5 py-0.5 text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase tracking-wider">
+                    {cmp.status}
                   </span>
                   <span className="text-xs font-medium text-zinc-400 flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5" />
-                    {cmp.allocationType?.toUpperCase() || 'GUARANTEED'}
+                    {cmp.allocationType?.toUpperCase() || "GUARANTEED"}
                   </span>
                 </div>
 
                 <div className="space-y-1">
-                  <h3 className="text-xl font-bold text-zinc-900 tracking-tight">{cmp.title}</h3>
-                  <p className="text-xs text-zinc-400">Ecosystem: {cmp.ecosystem || 'Solana'}</p>
+                  <div className="text-xs text-zinc-400 font-medium">{cmp.workspaceName}</div>
+                  <h3 className="text-lg font-bold text-zinc-900 tracking-tight">{cmp.title}</h3>
+                  <p className="text-xs text-zinc-400 font-mono">/c/{cmp.slug}</p>
                 </div>
 
-                <p className="text-sm text-zinc-600 leading-relaxed font-normal">
-                  {cmp.description || "Open whitelist spot allocation for partner communities."}
+                <p className="text-xs text-zinc-600 leading-relaxed font-normal">
+                  {cmp.description || "Allocations for verified DAOs, Web3 alpha groups, and Discord communities."}
                 </p>
 
-                <div className="p-4 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-between text-xs">
+                <div className="p-4 bg-zinc-50 border border-zinc-100 flex items-center justify-between text-xs">
                   <div>
-                    <span className="text-zinc-400 font-medium">Spots Open</span>
+                    <span className="text-zinc-400 font-medium">Allocated Spots</span>
                     <div className="text-base font-bold text-zinc-900">
-                      {cmp.totalSpots - cmp.allocatedSpots} / {cmp.totalSpots}
+                      {cmp.allocatedSpots} / {cmp.totalSpots}
                     </div>
                   </div>
                   <div>
-                    <span className="text-zinc-400 font-medium">Claimed</span>
+                    <span className="text-zinc-400 font-medium">Claimed Entries</span>
                     <div className="text-base font-bold text-emerald-600">{cmp.claimedSpots}</div>
                   </div>
                 </div>
               </div>
 
-              <div className="pt-2">
+              <div className="pt-2 flex items-center gap-3">
                 <Link
-                  href={`/c/${cmp.workspaceHandle || 'cybersamurai'}`}
+                  href={`/c/${cmp.slug}`}
                   target="_blank"
-                  className="w-full py-3 px-4 rounded-xl bg-zinc-900 hover:bg-black text-white text-xs font-semibold tracking-tight shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  className="flex-1 py-2 px-4 bg-zinc-900 hover:bg-black text-white text-xs font-medium text-center transition-colors flex items-center justify-center gap-1.5 shadow-2xs"
                 >
-                  <span>Apply for Allocation</span>
-                  <ArrowRight className="w-4 h-4" />
+                  <span>Apply for Spots</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             </div>
           ))
         ) : (
-          <div className="col-span-2 p-12 text-center text-zinc-500 bg-white rounded-3xl border border-zinc-200">
-            No active project campaigns available at this moment.
+          <div className="col-span-2 p-10 text-center text-xs text-zinc-400 bg-white border border-zinc-200">
+            No active project campaigns currently available.
           </div>
         )}
       </div>

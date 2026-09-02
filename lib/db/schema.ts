@@ -69,10 +69,47 @@ export const workspace = pgTable('workspace', {
   twitter: text('twitter'),
   website: text('website'),
   bio: text('bio'),
-  ecosystems: text('ecosystems'), // JSON string array or comma-separated
+  ecosystems: text('ecosystems'),
   avatarUrl: text('avatar_url'),
-  status: text('status').notNull().default('pending_payment'), // 'pending_payment', 'active'
+  discordMemberCount: integer('discord_member_count').default(0),
+  xFollowerCount: integer('x_follower_count').default(0),
+  verifiedMetricsUpdatedAt: timestamp('verified_metrics_updated_at'),
+  status: text('status').notNull().default('pending_payment'),
   paid: boolean('paid').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const communityProfile = pgTable('community_profile', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id')
+    .notNull()
+    .unique()
+    .references(() => workspace.id, { onDelete: 'cascade' }),
+  communityType: text('community_type').notNull().default('DAO'), // 'DAO', 'Alpha Group', 'Gaming Guild', 'NFT Community'
+  membersCount: integer('members_count').notNull().default(0),
+  discordServerId: text('discord_server_id'),
+  discordInviteUrl: text('discord_invite_url'),
+  xHandle: text('x_handle'),
+  xFollowerCount: integer('x_follower_count').notNull().default(0),
+  verifiedMetricsUpdatedAt: timestamp('verified_metrics_updated_at'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const cmProfile = pgTable('cm_profile', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id')
+    .notNull()
+    .unique()
+    .references(() => workspace.id, { onDelete: 'cascade' }),
+  experienceYears: integer('experience_years').notNull().default(1),
+  primaryEcosystems: text('primary_ecosystems'),
+  xHandle: text('x_handle'),
+  xFollowerCount: integer('x_follower_count').notNull().default(0),
+  discordUsername: text('discord_username'),
+  verifiedDealsCount: integer('verified_deals_count').notNull().default(0),
+  bio: text('bio'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
@@ -107,9 +144,9 @@ export const campaign = pgTable('campaign', {
   totalSpots: integer('total_spots').notNull().default(50),
   allocatedSpots: integer('allocated_spots').notNull().default(0),
   claimedSpots: integer('claimed_spots').notNull().default(0),
-  allocationType: text('allocation_type').notNull().default('guaranteed'), // 'guaranteed', 'fcfs'
+  allocationType: text('allocation_type').notNull().default('guaranteed'),
   ecosystem: text('ecosystem').notNull().default('Solana'),
-  status: text('status').notNull().default('active'), // 'active', 'ended', 'draft'
+  status: text('status').notNull().default('active'),
   expiresAt: timestamp('expires_at'),
   discordRequirement: boolean('discord_requirement').notNull().default(true),
   twitterRequirement: boolean('twitter_requirement').notNull().default(true),
@@ -127,7 +164,7 @@ export const campaignAllocation = pgTable('campaign_allocation', {
     .references(() => workspace.id, { onDelete: 'cascade' }),
   allocatedSpots: integer('allocated_spots').notNull().default(10),
   claimedSpots: integer('claimed_spots').notNull().default(0),
-  status: text('status').notNull().default('accepted'), // 'pending', 'accepted', 'rejected'
+  status: text('status').notNull().default('accepted'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
@@ -140,9 +177,9 @@ export const application = pgTable('application', {
   applicantWorkspaceId: text('applicant_workspace_id')
     .notNull()
     .references(() => workspace.id, { onDelete: 'cascade' }),
-  applicantType: text('applicant_type').notNull().default('community'), // 'community', 'cm'
+  applicantType: text('applicant_type').notNull().default('community'),
   requestedSpots: integer('requested_spots').notNull().default(10),
-  status: text('status').notNull().default('pending'), // 'pending', 'accepted', 'rejected'
+  status: text('status').notNull().default('pending'),
   pitchMessage: text('pitch_message'),
   discordInvite: text('discord_invite'),
   cmHandle: text('cm_handle'),
@@ -159,7 +196,7 @@ export const entry = pgTable('entry', {
   walletAddress: text('wallet_address').notNull(),
   discordTag: text('discord_tag'),
   xHandle: text('x_handle'),
-  status: text('status').notNull().default('submitted'), // 'submitted', 'verified', 'winner', 'rejected'
+  status: text('status').notNull().default('submitted'),
   submittedAt: timestamp('submitted_at').notNull().defaultNow(),
 });
 
@@ -186,7 +223,7 @@ export const teamMember = pgTable('team_member', {
     .notNull()
     .references(() => workspace.id, { onDelete: 'cascade' }),
   email: text('email').notNull(),
-  role: text('role').notNull().default('manager'), // 'owner', 'admin', 'manager'
-  status: text('status').notNull().default('active'), // 'invited', 'active'
+  role: text('role').notNull().default('manager'),
+  status: text('status').notNull().default('active'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });

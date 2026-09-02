@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { optionId, name, handle, discord, twitter, bio, avatarUrl, selectedEcosystems } = body;
+    const { optionId, name, handle, discord, twitter, website, bio, avatarUrl, selectedEcosystems } = body;
 
     let workspaceType = "project";
     if (optionId === "connect_community") {
@@ -44,6 +44,7 @@ export async function POST(request: Request) {
       type: workspaceType,
       discord: discord?.trim() || null,
       twitter: twitter?.trim() || null,
+      website: website?.trim() || null,
       bio: bio?.trim() || null,
       ecosystems: ecosystemsStr,
       avatarUrl: avatarUrl?.trim() || null,

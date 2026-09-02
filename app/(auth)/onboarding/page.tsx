@@ -15,6 +15,8 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
+  Globe,
+  AtSign,
 } from "lucide-react"
 import { DiscordIcon, XSocialIcon } from "@/components/ui/icons"
 
@@ -73,6 +75,7 @@ function OnboardingContent() {
     handle: "",
     discord: "",
     twitter: "",
+    website: "",
     bio: "",
     selectedEcosystems: ["Ethereum", "Solana"] as string[],
   })
@@ -456,27 +459,30 @@ function OnboardingContent() {
                       )}
                     </div>
 
-                    <div className="relative flex items-center">
-                      <span className="absolute left-3.5 text-xs font-semibold text-zinc-400 select-none truncate max-w-[180px]">
-                        {urlPrefix.replace(/^https?:\/\//, "")}
-                      </span>
-                      <input
-                        type="text"
-                        required
-                        readOnly
-                        value={formData.handle}
-                        placeholder="auto-generated-handle"
-                        style={{ paddingLeft: `${Math.max(110, (urlPrefix.replace(/^https?:\/\//, "").length * 7) + 20)}px` }}
-                        className={`w-full pr-4 py-3 rounded-xl border text-sm font-medium transition-all bg-zinc-50/80 cursor-not-allowed select-none ${
-                          handleStatus === "taken"
-                            ? "border-rose-300 text-rose-900 bg-rose-50/40"
-                            : handleStatus === "available"
-                            ? "border-emerald-300 text-zinc-900"
-                            : "border-zinc-200 text-zinc-700"
-                        }`}
-                      />
-                    </div>
+                    <input
+                      type="text"
+                      required
+                      readOnly
+                      value={formData.handle}
+                      placeholder="auto-generated-handle"
+                      className={`w-full px-4 py-3 rounded-xl border text-sm font-mono font-medium transition-all bg-zinc-50/80 cursor-not-allowed select-none ${
+                        handleStatus === "taken"
+                          ? "border-rose-300 text-rose-900 bg-rose-50/40"
+                          : handleStatus === "available"
+                          ? "border-emerald-300 text-zinc-900"
+                          : "border-zinc-200 text-zinc-700"
+                      }`}
+                    />
                   </div>
+                </div>
+
+                {/* Dedicated Fully-Visible Handle URL Display Banner */}
+                <div className="p-3.5 rounded-xl bg-zinc-50 border border-zinc-200/80 text-xs flex items-center gap-2 overflow-x-auto">
+                  <Globe className="w-4 h-4 text-zinc-500 shrink-0" />
+                  <span className="text-zinc-500 font-semibold shrink-0">Live Public URL:</span>
+                  <span className="font-mono text-zinc-900 font-bold break-all">
+                    {urlPrefix}{formData.handle || "your-handle"}
+                  </span>
                 </div>
 
                 {/* Handle Notification Banner if Taken */}
@@ -488,35 +494,57 @@ function OnboardingContent() {
                 )}
               </div>
 
-              {/* Social Connections */}
+              {/* Social Connections & Website Links */}
               <div className="space-y-3">
                 <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider block">
-                  Community Links
+                  Verification & Social Links
                 </label>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="relative flex items-center">
-                    <div className="absolute left-3.5 text-zinc-400">
-                      <DiscordIcon className="w-4 h-4" />
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* X (Twitter) Username Input */}
+                    <div className="relative flex items-center">
+                      <div className="absolute left-3.5 text-zinc-400 font-semibold text-xs select-none flex items-center gap-1">
+                        <XSocialIcon className="w-3.5 h-3.5" />
+                        <span>@</span>
+                      </div>
+                      <input
+                        type="text"
+                        value={formData.twitter}
+                        onChange={(e) => {
+                          const cleanVal = e.target.value.replace(/^https?:\/\/(x|twitter)\.com\//, "").replace(/^@/, "").trim()
+                          setFormData({ ...formData, twitter: cleanVal })
+                        }}
+                        placeholder="Username"
+                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-zinc-200 text-sm font-medium text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 transition-all bg-white"
+                      />
                     </div>
-                    <input
-                      type="text"
-                      value={formData.discord}
-                      onChange={(e) => setFormData({ ...formData, discord: e.target.value })}
-                      placeholder="Discord Server Invite / Handle"
-                      className="w-full pl-10 pr-4 py-3 rounded-xl border border-zinc-200 text-sm font-medium text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 transition-all bg-white"
-                    />
+
+                    {/* Discord Server Invite / Handle */}
+                    <div className="relative flex items-center">
+                      <div className="absolute left-3.5 text-zinc-400">
+                        <DiscordIcon className="w-4 h-4" />
+                      </div>
+                      <input
+                        type="text"
+                        value={formData.discord}
+                        onChange={(e) => setFormData({ ...formData, discord: e.target.value })}
+                        placeholder="Discord Server Invite / Handle"
+                        className="w-full pl-10 pr-4 py-3 rounded-xl border border-zinc-200 text-sm font-medium text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 transition-all bg-white"
+                      />
+                    </div>
                   </div>
 
+                  {/* Personal / Project Website Link */}
                   <div className="relative flex items-center">
                     <div className="absolute left-3.5 text-zinc-400">
-                      <XSocialIcon className="w-4 h-4" />
+                      <Globe className="w-4 h-4" />
                     </div>
                     <input
                       type="text"
-                      value={formData.twitter}
-                      onChange={(e) => setFormData({ ...formData, twitter: e.target.value })}
-                      placeholder="Twitter / X handle (@name)"
+                      value={formData.website}
+                      onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                      placeholder="Official Website (e.g. https://cybersamurai.io)"
                       className="w-full pl-10 pr-4 py-3 rounded-xl border border-zinc-200 text-sm font-medium text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 transition-all bg-white"
                     />
                   </div>

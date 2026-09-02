@@ -1,7 +1,7 @@
 import React from "react"
 import { headers } from "next/headers"
 import Link from "next/link"
-import { Handshake, Globe, CheckCircle2, Clock, ArrowRight } from "lucide-react"
+import { Handshake, Globe, CheckCircle2, ArrowRight } from "lucide-react"
 import { auth } from "@/lib/auth/auth"
 import { ensureSeedData } from "@/lib/db/seed"
 import { getUserWorkspaces, getWorkspaceByHandle, getApplicationsForProject } from "@/lib/db/queries"
@@ -26,26 +26,21 @@ export default async function ProjectCollaborationsPage() {
   const acceptedCollabs = applications.filter((a) => a.status === "accepted")
 
   return (
-    <div className="w-full max-w-6xl mx-auto py-8 px-6 space-y-8">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-100 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-200/80 pb-6">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-              Active Collaborations
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">
-            Approved Community Collaborations
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
+            Collaborations
           </h1>
-          <p className="text-sm text-zinc-500 font-normal">
+          <p className="text-xs text-zinc-500 font-normal">
             Track all approved giveaway spot allocations granted to partner DAOs and alpha groups.
           </p>
         </div>
 
         <Link
           href="/project/applications"
-          className="px-4 py-2.5 rounded-xl bg-zinc-900 text-white text-xs font-semibold hover:bg-black transition-all flex items-center gap-2 shadow-xs cursor-pointer"
+          className="px-4 py-2 bg-zinc-900 text-white text-xs font-medium hover:bg-black transition-all flex items-center gap-1.5 shadow-2xs cursor-pointer"
         >
           <span>View Inbox</span>
           <ArrowRight className="w-4 h-4" />
@@ -53,9 +48,9 @@ export default async function ProjectCollaborationsPage() {
       </div>
 
       {/* Accepted Collaborations List */}
-      <div className="p-8 rounded-3xl bg-white border border-zinc-200/80 shadow-xs space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3 text-zinc-900 font-bold text-sm">
+      <div className="p-6 bg-white border border-zinc-200/80 shadow-2xs space-y-6">
+        <div className="flex items-center justify-between border-b border-zinc-100 pb-4">
+          <div className="flex items-center gap-2 text-xs font-semibold text-zinc-900">
             <Handshake className="w-4 h-4 text-emerald-600" />
             <span>Active Partner Deals ({acceptedCollabs.length})</span>
           </div>
@@ -64,11 +59,11 @@ export default async function ProjectCollaborationsPage() {
         <div className="divide-y divide-zinc-100">
           {acceptedCollabs.length > 0 ? (
             acceptedCollabs.map((app) => (
-              <div key={app.id} className="py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div key={app.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="space-y-1 min-w-0">
                   <div className="flex items-center gap-2.5">
                     <h3 className="text-sm font-bold text-zinc-900">{app.applicantWorkspaceId.replace("ws_", "").toUpperCase()}</h3>
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="px-2 py-0.5 text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                       ✓ {app.requestedSpots} Spots Granted
                     </span>
                   </div>
@@ -81,13 +76,13 @@ export default async function ProjectCollaborationsPage() {
                       href={app.discordInvite.startsWith("http") ? app.discordInvite : `https://${app.discordInvite}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="px-3 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-semibold transition-colors flex items-center gap-1"
+                      className="px-3 py-1.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-medium transition-colors flex items-center gap-1"
                     >
                       <Globe className="w-3.5 h-3.5" />
                       <span>Discord</span>
                     </a>
                   )}
-                  <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+                  <span className="text-[11px] font-medium text-emerald-600 flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     Active Deal
                   </span>
@@ -95,7 +90,7 @@ export default async function ProjectCollaborationsPage() {
               </div>
             ))
           ) : (
-            <div className="py-12 text-center space-y-2">
+            <div className="py-10 text-center space-y-2">
               <Handshake className="w-8 h-8 text-zinc-300 mx-auto" />
               <p className="text-sm font-semibold text-zinc-700">No approved collaborations yet</p>
               <p className="text-xs text-zinc-400">

@@ -64,11 +64,11 @@ const WORKSPACE_CONFIG: Record<
     icon: ShieldCheck,
     nav: [
       { label: "Dashboard", href: "/community", icon: LayoutDashboard },
+      { label: "Project Campaigns", href: "/community/campaigns", icon: Compass },
+      { label: "Applications Sent", href: "/community/applications", icon: Send },
       { label: "Collaborations", href: "/community/collaborations", icon: Handshake },
-      { label: "Browse Campaigns", href: "/community/campaigns", icon: Rocket },
-      { label: "Representatives", href: "/community/representatives", icon: UserCheck },
-      { label: "Applications", href: "/community/applications", icon: Send },
-      { label: "Allocation History", href: "/community/history", icon: History },
+      { label: "Community Reps", href: "/community/representatives", icon: Users },
+      { label: "History Log", href: "/community/history", icon: History },
       { label: "Integrations", href: "/community/integrations", icon: Zap },
       { label: "Settings", href: "/community/settings", icon: Settings },
     ],
@@ -78,11 +78,11 @@ const WORKSPACE_CONFIG: Record<
     icon: Briefcase,
     nav: [
       { label: "Dashboard", href: "/cm", icon: LayoutDashboard },
-      { label: "Applications", href: "/cm/applications", icon: Send },
-      { label: "Collaborations", href: "/cm/collaborations", icon: Handshake },
-      { label: "Manager Portfolio", href: "/cm/portfolio", icon: FolderGit2 },
-      { label: "Network Communities", href: "/cm/communities", icon: Users },
-      { label: "Opportunities", href: "/cm/opportunities", icon: Compass },
+      { label: "My Roster & Portfolio", href: "/cm/portfolio", icon: FolderGit2 },
+      { label: "Client Applications", href: "/cm/applications", icon: Send },
+      { label: "Active Deals", href: "/cm/collaborations", icon: Handshake },
+      { label: "Explore Communities", href: "/cm/communities", icon: Globe },
+      { label: "Collab Opportunities", href: "/cm/opportunities", icon: Rocket },
       { label: "Settings", href: "/cm/settings", icon: Settings },
     ],
   },
@@ -92,67 +92,57 @@ export function Sidebar() {
   const pathname = usePathname()
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [isWorkspaceMenuOpen, setIsWorkspaceMenuOpen] = useState(false)
+
+  // Auth session
+  const { data: session } = useSession()
   const [dbWorkspaces, setDbWorkspaces] = useState<any[]>([])
 
-  const { data: session } = useSession()
-  const userName = session?.user?.name || "Alex Rivera"
-  const userEmail = session?.user?.email || "alex@oncollably.com"
-  const userImage = session?.user?.image || ""
-  const initial = userName.charAt(0).toUpperCase()
-
-  // Fetch live user workspaces from Neon Postgres
   useEffect(() => {
-    async function loadWorkspaces() {
-      try {
-        const res = await fetch("/api/workspaces")
-        const data = await res.json()
-        if (data.workspaces) {
+    fetch("/api/workspaces")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.workspaces) {
           setDbWorkspaces(data.workspaces)
         }
-      } catch (err) {
-        console.error("Failed to load live workspaces:", err)
-      }
-    }
-    loadWorkspaces()
+      })
+      .catch(() => {})
   }, [])
+
+  // Determine active workspace type based on current path
+  const getActiveWorkspaceType = (): WorkspaceType => {
+    if (pathname.startsWith("/community")) return "community"
+    if (pathname.startsWith("/cm")) return "cm"
+    return "project"
+  }
+
+  const activeSpace = getActiveWorkspaceType()
+  const spaceConfig = WORKSPACE_CONFIG[activeSpace]
+
+  // Find active workspace details from DB
+  const currentDbWorkspace = dbWorkspaces.find((w) => w.type === activeSpace) || dbWorkspaces[0]
+  const activeWorkspaceName = currentDbWorkspace?.name || spaceConfig.roleLabel
+  const activeWorkspaceHandle = currentDbWorkspace?.handle || null
+  const activeWorkspaceAvatar = currentDbWorkspace?.avatarUrl || currentDbWorkspace?.image || null
 
   const handleSignOut = async () => {
     await signOut()
     window.location.href = "/sign-in"
   }
 
-  // Determine current active space based on path prefix
-  const activeSpace: WorkspaceType = pathname.startsWith("/community")
-    ? "community"
-    : pathname.startsWith("/cm")
-    ? "cm"
-    : "project"
-
-  const spaceConfig = WORKSPACE_CONFIG[activeSpace]
-
-  // Find matching workspace from DB for current space type
-  const currentDbWorkspace = dbWorkspaces.find((w) => w.type === activeSpace)
-
-  const activeWorkspaceName =
-    currentDbWorkspace?.name ||
-    (activeSpace === "project"
-      ? "CyberSamurai NFT"
-      : activeSpace === "community"
-      ? "Alpha Seekers DAO"
-      : `${userName} (Collab Manager)`)
-
-  const activeWorkspaceAvatar = currentDbWorkspace?.avatarUrl || ""
-  const activeWorkspaceHandle = currentDbWorkspace?.handle || ""
+  const userName = session?.user?.name || "User Account"
+  const userEmail = session?.user?.email || "user@oncollably.com"
+  const userImage = session?.user?.image
+  const initial = userName ? userName.charAt(0).toUpperCase() : "U"
 
   return (
     <>
-      {/* Mobile Top Header */}
+      {/* Mobile Bar Top Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-zinc-100 px-6 flex items-center justify-between z-40">
         <Logo />
         <button
           type="button"
           onClick={() => setIsMobileOpen(!isMobileOpen)}
-          className="p-2 rounded-xl text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
+          className="p-2 text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
           aria-label="Toggle Navigation Menu"
         >
           {isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -184,17 +174,17 @@ export function Sidebar() {
             <button
               type="button"
               onClick={() => setIsWorkspaceMenuOpen(!isWorkspaceMenuOpen)}
-              className="w-full p-3.5 rounded-2xl bg-zinc-50/80 hover:bg-zinc-100/80 border border-zinc-200/60 transition-all text-left flex items-center justify-between group cursor-pointer"
+              className="w-full p-3.5 bg-zinc-50/80 hover:bg-zinc-100/80 border border-zinc-200/60 transition-all text-left flex items-center justify-between group cursor-pointer"
             >
               <div className="flex items-center gap-3 min-w-0">
                 {activeWorkspaceAvatar ? (
                   <img
                     src={activeWorkspaceAvatar}
                     alt={activeWorkspaceName}
-                    className="w-8 h-8 rounded-xl object-cover border border-zinc-200 shrink-0"
+                    className="w-8 h-8 object-cover border border-zinc-200 shrink-0"
                   />
                 ) : (
-                  <div className="w-8 h-8 rounded-xl bg-zinc-900 text-white flex items-center justify-center shrink-0">
+                  <div className="w-8 h-8 bg-zinc-900 text-white flex items-center justify-center shrink-0">
                     <spaceConfig.icon className="w-4 h-4 stroke-[1.75]" />
                   </div>
                 )}
@@ -227,7 +217,7 @@ export function Sidebar() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute left-5 right-5 top-22 bg-white border border-zinc-200/80 rounded-2xl shadow-xl p-2 z-50 space-y-1"
+                  className="absolute left-5 right-5 top-22 bg-white border border-zinc-200/80 shadow-xl p-2 z-50 space-y-1"
                 >
                   <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
                     Active Workspaces
@@ -246,7 +236,7 @@ export function Sidebar() {
                             setIsWorkspaceMenuOpen(false)
                             setIsMobileOpen(false)
                           }}
-                          className={`flex items-center justify-between p-2.5 rounded-xl text-xs font-medium transition-all ${
+                          className={`flex items-center justify-between p-2.5 text-xs font-medium transition-all ${
                             isSelected
                               ? "bg-zinc-900 text-white font-semibold"
                               : "text-zinc-700 hover:bg-zinc-100/70"
@@ -257,7 +247,7 @@ export function Sidebar() {
                               <img
                                 src={ws.avatarUrl}
                                 alt={ws.name}
-                                className="w-5 h-5 rounded-lg object-cover border border-zinc-200/60 shrink-0"
+                                className="w-5 h-5 object-cover border border-zinc-200/60 shrink-0"
                               />
                             ) : (
                               <Rocket className="w-4 h-4 shrink-0 stroke-[1.75]" />
@@ -280,7 +270,7 @@ export function Sidebar() {
                           setIsWorkspaceMenuOpen(false)
                           setIsMobileOpen(false)
                         }}
-                        className={`flex items-center gap-3 p-2.5 rounded-xl text-xs font-medium transition-all ${
+                        className={`flex items-center gap-3 p-2.5 text-xs font-medium transition-all ${
                           activeSpace === "project"
                             ? "bg-zinc-900 text-white font-semibold"
                             : "text-zinc-700 hover:bg-zinc-100/70"
@@ -296,7 +286,7 @@ export function Sidebar() {
                           setIsWorkspaceMenuOpen(false)
                           setIsMobileOpen(false)
                         }}
-                        className={`flex items-center gap-3 p-2.5 rounded-xl text-xs font-medium transition-all ${
+                        className={`flex items-center gap-3 p-2.5 text-xs font-medium transition-all ${
                           activeSpace === "community"
                             ? "bg-zinc-900 text-white font-semibold"
                             : "text-zinc-700 hover:bg-zinc-100/70"
@@ -312,7 +302,7 @@ export function Sidebar() {
                           setIsWorkspaceMenuOpen(false)
                           setIsMobileOpen(false)
                         }}
-                        className={`flex items-center gap-3 p-2.5 rounded-xl text-xs font-medium transition-all ${
+                        className={`flex items-center gap-3 p-2.5 text-xs font-medium transition-all ${
                           activeSpace === "cm"
                             ? "bg-zinc-900 text-white font-semibold"
                             : "text-zinc-700 hover:bg-zinc-100/70"
@@ -331,7 +321,7 @@ export function Sidebar() {
                         setIsWorkspaceMenuOpen(false)
                         setIsMobileOpen(false)
                       }}
-                      className="flex items-center gap-2.5 p-2 rounded-xl text-xs font-semibold text-zinc-900 hover:bg-zinc-100 transition-colors"
+                      className="flex items-center gap-2.5 p-2 text-xs font-semibold text-zinc-900 hover:bg-zinc-100 transition-colors"
                     >
                       <Plus className="w-4 h-4 text-zinc-600" />
                       <span>Create New Workspace</span>
@@ -356,7 +346,7 @@ export function Sidebar() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsMobileOpen(false)}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-3 px-3.5 py-2.5 text-xs font-semibold transition-all ${
                     isActive
                       ? "bg-zinc-900 text-white shadow-2xs"
                       : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100/80"
@@ -372,16 +362,16 @@ export function Sidebar() {
 
         {/* User Profile Footer */}
         <div className="p-4 border-t border-zinc-100">
-          <div className="p-3 rounded-2xl bg-zinc-50/80 border border-zinc-200/50 flex items-center justify-between gap-3">
+          <div className="p-3 bg-zinc-50/80 border border-zinc-200/50 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
               {userImage ? (
                 <img
                   src={userImage}
                   alt={userName}
-                  className="w-8 h-8 rounded-full object-cover border border-zinc-200 shrink-0"
+                  className="w-8 h-8 object-cover border border-zinc-200 shrink-0"
                 />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-zinc-900 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 bg-zinc-900 text-white font-bold text-xs flex items-center justify-center shrink-0">
                   {initial}
                 </div>
               )}
@@ -398,7 +388,7 @@ export function Sidebar() {
             <button
               type="button"
               onClick={handleSignOut}
-              className="p-1.5 rounded-xl text-zinc-400 hover:text-zinc-900 hover:bg-zinc-200/60 transition-colors cursor-pointer"
+              className="p-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-200/60 transition-colors cursor-pointer"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4 stroke-[1.75]" />

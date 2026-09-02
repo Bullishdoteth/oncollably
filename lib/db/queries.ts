@@ -47,6 +47,15 @@ export async function getWorkspaceById(id: string) {
   }
 }
 
+export async function getWorkspacesByType(type: 'project' | 'community' | 'cm') {
+  try {
+    return await db.select().from(workspace).where(eq(workspace.type, type)).orderBy(desc(workspace.createdAt));
+  } catch (error) {
+    console.error('Error fetching workspaces by type:', error);
+    return [];
+  }
+}
+
 /**
  * Campaigns
  */

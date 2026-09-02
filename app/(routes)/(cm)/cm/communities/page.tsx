@@ -1,56 +1,81 @@
-"use client"
-
 import React from "react"
-import Link from "next/link"
-import { Layers, ArrowRight, Sparkles, CheckCircle2 } from "lucide-react"
+import { Globe, Users, ShieldCheck, ExternalLink } from "lucide-react"
+import { ensureSeedData } from "@/lib/db/seed"
+import { getWorkspacesByType } from "@/lib/db/queries"
 
-export default function Page() {
+export default async function CmCommunitiesPage() {
+  await ensureSeedData()
+
+  const communities = await getWorkspacesByType("community")
+
   return (
-    <div className="w-full max-w-6xl mx-auto py-8 px-6 space-y-8">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-100 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-200/80 pb-6">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-zinc-100 text-zinc-700 border border-zinc-200">
-              Manager Hub
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">
-            Network Communities
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
+            Explore Communities
           </h1>
-          <p className="text-sm text-zinc-500 font-normal">
-            Your saved network of alpha groups, DAOs, and community leaders.
+          <p className="text-xs text-zinc-500 font-normal">
+            Discover verified Web3 alpha groups, DAOs, and guilds to represent as a Collab Manager.
           </p>
-        </div>
-
-        <div className="flex items-center gap-3 shrink-0">
-          <button className="px-4 py-2 rounded-xl bg-zinc-900 text-white text-xs font-semibold hover:bg-black transition-all">
-            Action Button
-          </button>
         </div>
       </div>
 
-      {/* Main Content Placeholder Card */}
-      <div className="p-8 rounded-3xl bg-white border border-zinc-200/80 shadow-xs space-y-6">
-        <div className="flex items-center gap-3 text-zinc-900 font-semibold text-sm">
-          <Sparkles className="w-4 h-4 text-zinc-700" />
-          <span>Network Communities Workspace</span>
-        </div>
+      {/* Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {communities.length > 0 ? (
+          communities.map((com) => (
+            <div
+              key={com.id}
+              className="p-6 bg-white border border-zinc-200/80 shadow-2xs flex flex-col justify-between space-y-6 hover:border-zinc-300 transition-all"
+            >
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="px-2.5 py-0.5 text-[11px] font-semibold bg-zinc-100 text-zinc-700 border border-zinc-200 uppercase">
+                    {com.type}
+                  </span>
+                  <span className="text-xs font-medium text-emerald-600 flex items-center gap-1">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    Verified
+                  </span>
+                </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-          <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-100 space-y-1">
-            <span className="text-xs text-zinc-400 font-medium">Status</span>
-            <div className="text-lg font-bold text-zinc-900">Active</div>
+                <div className="space-y-0.5">
+                  <h3 className="text-base font-bold text-zinc-900 tracking-tight">
+                    {com.name}
+                  </h3>
+                  <div className="text-xs text-zinc-400 font-mono">@{com.handle}</div>
+                </div>
+
+                <div className="space-y-1 text-xs text-zinc-500">
+                  <div className="flex items-center gap-1.5 font-medium text-zinc-700">
+                    <Users className="w-3.5 h-3.5 text-zinc-400" />
+                    <span>{(com as any).membersCount || "Active Members"}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5 text-zinc-400" />
+                    <span>{com.ecosystems || "Web3 Ecosystem"}</span>
+                  </div>
+                </div>
+              </div>
+
+              <a
+                href={`/c/${com.handle}`}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full py-2 px-4 bg-zinc-900 hover:bg-black text-white text-xs font-medium transition-all flex items-center justify-center gap-1.5"
+              >
+                <span>View Profile</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          ))
+        ) : (
+          <div className="col-span-3 p-10 text-center text-xs text-zinc-400 bg-white border border-zinc-200">
+            No community workspaces registered yet.
           </div>
-          <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-100 space-y-1">
-            <span className="text-xs text-zinc-400 font-medium">Total Records</span>
-            <div className="text-lg font-bold text-zinc-900">0</div>
-          </div>
-          <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-100 space-y-1">
-            <span className="text-xs text-zinc-400 font-medium">Last Updated</span>
-            <div className="text-lg font-bold text-zinc-900">Just Now</div>
-          </div>
-        </div>
+        )}
       </div>
     </div>
   )

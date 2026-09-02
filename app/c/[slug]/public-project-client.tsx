@@ -55,12 +55,15 @@ export function PublicProjectClient({
   const ecosystems = initialWorkspace?.ecosystems || ""
   const avatarUrl = initialWorkspace?.avatarUrl || initialWorkspace?.image || ""
 
+  const websiteUrl = initialWorkspace?.website
+    ? (initialWorkspace.website.startsWith("http") ? initialWorkspace.website : `https://${initialWorkspace.website}`)
+    : ""
   const discordUrl = initialWorkspace?.discord
     ? (initialWorkspace.discord.startsWith("http") ? initialWorkspace.discord : `https://${initialWorkspace.discord}`)
-    : "https://discord.com"
+    : ""
   const twitterUrl = initialWorkspace?.twitter
     ? (initialWorkspace.twitter.startsWith("http") ? initialWorkspace.twitter : `https://x.com/${initialWorkspace.twitter.replace(/^@/, '')}`)
-    : "https://x.com"
+    : ""
 
   const totalAllocated = initialCampaigns.reduce(
     (acc, c) => acc + (c.allocatedSpots || 0),
@@ -226,35 +229,41 @@ export function PublicProjectClient({
                   {projectBio}
                 </p>
 
-                {/* Social Links */}
+                {/* Social & Website Links */}
                 <div className="flex items-center gap-3 pt-2">
-                  <a
-                    href={twitterUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-zinc-300 hover:text-white transition-colors border border-white/10 backdrop-blur-sm"
-                    aria-label="Twitter Profile"
-                  >
-                    <XSocialIcon className="w-4 h-4" />
-                  </a>
-                  <a
-                    href={discordUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-zinc-300 hover:text-white transition-colors border border-white/10 backdrop-blur-sm"
-                    aria-label="Discord Server"
-                  >
-                    <DiscordIcon className="w-4 h-4" />
-                  </a>
-                  <a
-                    href="https://oncollably.com"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-zinc-300 hover:text-white transition-colors border border-white/10 backdrop-blur-sm flex items-center gap-1.5"
-                  >
-                    <Globe className="w-3.5 h-3.5" />
-                    Official Website
-                  </a>
+                  {twitterUrl && (
+                    <a
+                      href={twitterUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-zinc-300 hover:text-white transition-colors border border-white/10 backdrop-blur-sm"
+                      aria-label="Twitter Profile"
+                    >
+                      <XSocialIcon className="w-4 h-4" />
+                    </a>
+                  )}
+                  {discordUrl && (
+                    <a
+                      href={discordUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-zinc-300 hover:text-white transition-colors border border-white/10 backdrop-blur-sm"
+                      aria-label="Discord Server"
+                    >
+                      <DiscordIcon className="w-4 h-4" />
+                    </a>
+                  )}
+                  {websiteUrl && (
+                    <a
+                      href={websiteUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold text-zinc-300 hover:text-white transition-colors border border-white/10 backdrop-blur-sm flex items-center gap-1.5"
+                    >
+                      <Globe className="w-3.5 h-3.5" />
+                      Official Website
+                    </a>
+                  )}
                 </div>
               </div>
 

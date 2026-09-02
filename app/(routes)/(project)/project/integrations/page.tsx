@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState } from "react"
-import { Zap, CheckCircle2, RefreshCw, Lock, ExternalLink } from "lucide-react"
+import { Zap } from "lucide-react"
 import { DiscordIcon, XSocialIcon } from "@/components/ui/icons"
 import { toast } from "sonner"
 
@@ -52,19 +52,14 @@ export default function ProjectIntegrationsPage() {
   }
 
   return (
-    <div className="w-full max-w-6xl mx-auto py-8 px-6 space-y-8">
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-100 pb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-200/80 pb-6">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-zinc-100 text-zinc-700 border border-zinc-200">
-              Project Workspace
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight">
-            Integrations & API Webhooks
+          <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
+            Integrations
           </h1>
-          <p className="text-sm text-zinc-500 font-normal">
+          <p className="text-xs text-zinc-500 font-normal">
             Connect Discord bots, X API verification, and automated wallet verification tools.
           </p>
         </div>
@@ -79,16 +74,16 @@ export default function ProjectIntegrationsPage() {
           return (
             <div
               key={item.id}
-              className="p-8 rounded-3xl bg-white border border-zinc-200/80 shadow-xs flex flex-col justify-between space-y-6 hover:shadow-md transition-all"
+              className="p-6 bg-white border border-zinc-200/80 shadow-2xs flex flex-col justify-between space-y-6 hover:border-zinc-300 transition-all"
             >
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <div className="w-10 h-10 rounded-2xl bg-zinc-100 border border-zinc-200 flex items-center justify-center text-zinc-900 shrink-0">
-                    <Icon className="w-5 h-5" />
+                  <div className="w-9 h-9 bg-zinc-100 border border-zinc-200 flex items-center justify-center text-zinc-900 shrink-0">
+                    <Icon className="w-4 h-4" />
                   </div>
 
                   <span
-                    className={`px-2.5 py-1 rounded-full text-[11px] font-semibold border ${
+                    className={`px-2.5 py-0.5 text-[11px] font-semibold border ${
                       isConnected
                         ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                         : "bg-zinc-100 text-zinc-600 border-zinc-200"
@@ -109,9 +104,9 @@ export default function ProjectIntegrationsPage() {
 
               <button
                 onClick={() => toggleIntegration(item.id)}
-                className={`w-full py-2.5 px-4 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                className={`w-full py-2 px-4 text-xs font-medium transition-all cursor-pointer ${
                   isConnected
-                    ? "bg-zinc-100 hover:bg-zinc-200/80 text-zinc-900"
+                    ? "bg-zinc-100 hover:bg-zinc-200 text-zinc-900"
                     : "bg-zinc-900 hover:bg-black text-white"
                 }`}
               >
