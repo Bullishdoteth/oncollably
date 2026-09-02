@@ -1,16 +1,32 @@
 import React from "react"
 import Link from "next/link"
+import { headers } from "next/headers"
 import { ShieldCheck, Handshake, Rocket, Send, ArrowRight } from "lucide-react"
+import { auth } from "@/lib/auth/auth"
 import { ensureSeedData } from "@/lib/db/seed"
 import {
   getCollaborationsForCommunity,
   getApplicationsForApplicant,
+  getUserWorkspaces,
 } from "@/lib/db/queries"
 
 export default async function CommunityDashboardPage() {
   await ensureSeedData()
 
-  const communityWorkspaceId = "ws_alphaseekers"
+  const reqHeaders = await headers()
+  const session = await auth.api.getSession({ headers: reqHeaders })
+
+  let communityWorkspaceId = "ws_alphaseekers"
+  let communityWorkspace = null
+
+  if (session?.user) {
+    const userWorkspaces = await getUserWorkspaces(session.user.id)
+    communityWorkspace = userWorkspaces.find((w) => w.type === "community") || null
+    if (communityWorkspace) {
+      communityWorkspaceId = communityWorkspace.id
+    }
+  }
+
   const collaborations = await getCollaborationsForCommunity(communityWorkspaceId)
   const applications = await getApplicationsForApplicant(communityWorkspaceId)
 
@@ -27,7 +43,7 @@ export default async function CommunityDashboardPage() {
         <div className="space-y-1">
           <div className="flex items-center gap-2">
             <span className="text-xs font-semibold text-zinc-900 tracking-tight">
-              Alpha Seekers DAO
+              {communityWorkspace?.name || "Community Hub"}
             </span>
             <span className="text-zinc-300">•</span>
             <span className="text-xs text-zinc-500 font-medium">Community Hub</span>

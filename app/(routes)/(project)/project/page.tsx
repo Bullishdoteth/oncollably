@@ -17,11 +17,7 @@ export default async function ProjectDashboardPage() {
 
   if (session?.user) {
     const userWorkspaces = await getUserWorkspaces(session.user.id)
-    currentWorkspace = userWorkspaces.find((w) => w.type === "project") || userWorkspaces[0]
-  }
-
-  if (!currentWorkspace) {
-    currentWorkspace = await getWorkspaceByHandle("cybersamurai")
+    currentWorkspace = userWorkspaces.find((w) => w.type === "project") || null
   }
 
   const workspaceId = currentWorkspace?.id || "ws_cybersamurai"

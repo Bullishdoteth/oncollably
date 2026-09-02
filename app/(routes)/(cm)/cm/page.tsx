@@ -1,13 +1,28 @@
 import React from "react"
 import Link from "next/link"
+import { headers } from "next/headers"
 import { FolderGit2, Send, ArrowRight, UserCheck } from "lucide-react"
+import { auth } from "@/lib/auth/auth"
 import { ensureSeedData } from "@/lib/db/seed"
-import { getCmPortfolioItems, getApplicationsForApplicant } from "@/lib/db/queries"
+import { getCmPortfolioItems, getApplicationsForApplicant, getUserWorkspaces } from "@/lib/db/queries"
 
 export default async function CmDashboardPage() {
   await ensureSeedData()
 
-  const workspaceId = "ws_collabmanager"
+  const reqHeaders = await headers()
+  const session = await auth.api.getSession({ headers: reqHeaders })
+
+  let workspaceId = "ws_collabmanager"
+  let cmWorkspace = null
+
+  if (session?.user) {
+    const userWorkspaces = await getUserWorkspaces(session.user.id)
+    cmWorkspace = userWorkspaces.find((w) => w.type === "cm") || null
+    if (cmWorkspace) {
+      workspaceId = cmWorkspace.id
+    }
+  }
+
   const portfolioItems = await getCmPortfolioItems(undefined, workspaceId)
   const applications = await getApplicationsForApplicant(workspaceId)
 

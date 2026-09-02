@@ -28,6 +28,7 @@ import {
   ShieldCheck,
 } from "lucide-react"
 import { Logo } from "@/components/ui/logo"
+import { useWorkspaceStore } from "@/lib/store/use-workspace-store"
 
 type WorkspaceType = "project" | "community" | "cm"
 
@@ -90,23 +91,29 @@ const WORKSPACE_CONFIG: Record<
 
 export function Sidebar() {
   const pathname = usePathname()
-  const [isMobileOpen, setIsMobileOpen] = useState(false)
-  const [isWorkspaceMenuOpen, setIsWorkspaceMenuOpen] = useState(false)
-
-  // Auth session
   const { data: session } = useSession()
-  const [dbWorkspaces, setDbWorkspaces] = useState<any[]>([])
+
+  // Zustand Store Integration
+  const dbWorkspaces = useWorkspaceStore((s) => s.dbWorkspaces)
+  const setDbWorkspaces = useWorkspaceStore((s) => s.setDbWorkspaces)
+  const isMobileOpen = useWorkspaceStore((s) => s.isMobileOpen)
+  const setIsMobileOpen = useWorkspaceStore((s) => s.setIsMobileOpen)
+  const isWorkspaceMenuOpen = useWorkspaceStore((s) => s.isWorkspaceMenuOpen)
+  const setIsWorkspaceMenuOpen = useWorkspaceStore((s) => s.setIsWorkspaceMenuOpen)
+  const selectWorkspace = useWorkspaceStore((s) => s.selectWorkspace)
 
   useEffect(() => {
-    fetch("/api/workspaces")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data?.workspaces) {
-          setDbWorkspaces(data.workspaces)
-        }
-      })
-      .catch(() => {})
-  }, [])
+    if (dbWorkspaces.length === 0) {
+      fetch("/api/workspaces")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data?.workspaces) {
+            setDbWorkspaces(data.workspaces)
+          }
+        })
+        .catch(() => {})
+    }
+  }, [dbWorkspaces.length, setDbWorkspaces])
 
   // Determine active workspace type based on current path
   const getActiveWorkspaceType = (): WorkspaceType => {
@@ -122,7 +129,7 @@ export function Sidebar() {
   const currentDbWorkspace = dbWorkspaces.find((w) => w.type === activeSpace) || dbWorkspaces[0]
   const activeWorkspaceName = currentDbWorkspace?.name || spaceConfig.roleLabel
   const activeWorkspaceHandle = currentDbWorkspace?.handle || null
-  const activeWorkspaceAvatar = currentDbWorkspace?.avatarUrl || currentDbWorkspace?.image || null
+  const activeWorkspaceAvatar = (currentDbWorkspace as any)?.avatarUrl || (currentDbWorkspace as any)?.image || null
 
   const handleSignOut = async () => {
     await signOut()
@@ -138,75 +145,81 @@ export function Sidebar() {
     <>
       {/* Mobile Bar Top Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-zinc-100 px-6 flex items-center justify-between z-40">
-        <Logo />
+        <div className="flex items-center gap-3">
+          <Logo className="h-6 w-auto" />
+          <span className="text-[10px] font-semibold tracking-wider text-zinc-400 uppercase border border-zinc-200 px-1.5 py-0.5 rounded-none">
+            {spaceConfig.roleLabel}
+          </span>
+        </div>
+
         <button
-          type="button"
-          onClick={() => setIsMobileOpen(!isMobileOpen)}
-          className="p-2 text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100 transition-colors"
-          aria-label="Toggle Navigation Menu"
+          onClick={() => setIsMobileOpen((prev) => !prev)}
+          className="p-2 text-zinc-600 hover:text-zinc-900 transition-colors"
+          aria-label="Toggle menu"
         >
-          {isMobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          {isMobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
         </button>
       </div>
 
-      {/* Mobile Backdrop */}
-      {isMobileOpen && (
-        <div
-          onClick={() => setIsMobileOpen(false)}
-          className="lg:hidden fixed inset-0 bg-black/30 backdrop-blur-xs z-40"
-        />
-      )}
+      {/* Mobile Overlay */}
+      <AnimatePresence>
+        {isMobileOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsMobileOpen(false)}
+            className="lg:hidden fixed inset-0 bg-black/30 backdrop-blur-xs z-40"
+          />
+        )}
+      </AnimatePresence>
 
-      {/* Sidebar Desktop & Mobile Container */}
+      {/* Sidebar Container */}
       <aside
-        className={`fixed lg:sticky top-0 left-0 bottom-0 z-50 w-72 h-screen bg-white border-r border-zinc-100 flex flex-col justify-between transition-transform duration-300 ${
-          isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        className={`fixed top-0 bottom-0 left-0 z-50 w-72 bg-white border-r border-zinc-200/80 flex flex-col justify-between transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+          isMobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="flex-1 flex flex-col min-h-0">
-          {/* Minimal Header Logo */}
-          <div className="px-6 py-6 border-b border-zinc-100 flex items-center justify-between">
-            <Logo />
+        {/* Top Header & Branding */}
+        <div>
+          <div className="p-6 pb-4 flex items-center justify-between">
+            <Link href="/" className="flex items-center gap-2 group">
+              <Logo className="h-7 w-auto transition-transform group-hover:scale-[1.02]" />
+            </Link>
+
+            <span className="text-[10px] font-semibold tracking-wider text-zinc-500 uppercase bg-zinc-100 border border-zinc-200 px-2 py-0.5 rounded-none">
+              Beta
+            </span>
           </div>
 
-          {/* Live Workspace Switcher ("Workspace Swatch") */}
-          <div className="p-5 relative">
+          {/* Active Workspace Selector */}
+          <div className="px-5 py-2 relative">
             <button
-              type="button"
-              onClick={() => setIsWorkspaceMenuOpen(!isWorkspaceMenuOpen)}
-              className="w-full p-3.5 bg-zinc-50/80 hover:bg-zinc-100/80 border border-zinc-200/60 transition-all text-left flex items-center justify-between group cursor-pointer"
+              onClick={() => setIsWorkspaceMenuOpen((prev) => !prev)}
+              className="w-full flex items-center justify-between p-3 bg-zinc-50 border border-zinc-200/80 hover:border-zinc-300 hover:bg-zinc-100/60 transition-all text-left group"
             >
               <div className="flex items-center gap-3 min-w-0">
                 {activeWorkspaceAvatar ? (
                   <img
                     src={activeWorkspaceAvatar}
                     alt={activeWorkspaceName}
-                    className="w-8 h-8 object-cover border border-zinc-200 shrink-0"
+                    className="w-8 h-8 object-cover border border-zinc-200/80 shrink-0"
                   />
                 ) : (
-                  <div className="w-8 h-8 bg-zinc-900 text-white flex items-center justify-center shrink-0">
-                    <spaceConfig.icon className="w-4 h-4 stroke-[1.75]" />
+                  <div className="w-8 h-8 bg-zinc-900 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                    {activeWorkspaceName.charAt(0).toUpperCase()}
                   </div>
                 )}
                 <div className="min-w-0">
                   <div className="text-xs font-bold text-zinc-900 truncate">
                     {activeWorkspaceName}
                   </div>
-                  <div className="text-[11px] font-medium text-zinc-400 truncate flex items-center gap-1">
-                    <span>{spaceConfig.roleLabel}</span>
-                    {activeWorkspaceHandle && (
-                      <span className="text-[10px] text-zinc-400 font-mono">
-                        @{activeWorkspaceHandle}
-                      </span>
-                    )}
+                  <div className="text-[10px] text-zinc-400 font-medium truncate">
+                    {activeWorkspaceHandle ? `@${activeWorkspaceHandle}` : spaceConfig.roleLabel}
                   </div>
                 </div>
               </div>
-              <ChevronDown
-                className={`w-4 h-4 text-zinc-400 group-hover:text-zinc-900 transition-transform ${
-                  isWorkspaceMenuOpen ? "rotate-180" : ""
-                }`}
-              />
+              <ChevronDown className={`w-4 h-4 text-zinc-400 group-hover:text-zinc-600 transition-transform ${isWorkspaceMenuOpen ? "rotate-180" : ""}`} />
             </button>
 
             {/* Live Workspace Switcher Dropdown */}
@@ -224,7 +237,7 @@ export function Sidebar() {
                   </div>
 
                   {dbWorkspaces.length > 0 ? (
-                    dbWorkspaces.map((ws) => {
+                    dbWorkspaces.map((ws: any) => {
                       const wsPath = ws.type === "community" ? "/community" : ws.type === "cm" ? "/cm" : "/project"
                       const isSelected = activeSpace === ws.type
 
@@ -232,18 +245,8 @@ export function Sidebar() {
                         <Link
                           key={ws.id}
                           href={wsPath}
-                          onClick={async () => {
-                            setIsWorkspaceMenuOpen(false)
-                            setIsMobileOpen(false)
-                            try {
-                              await fetch("/api/workspaces/select", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ workspaceType: ws.type, handle: ws.handle }),
-                              })
-                            } catch (e) {
-                              console.error("Failed to set active workspace:", e)
-                            }
+                          onClick={() => {
+                            selectWorkspace(ws.type, ws.handle)
                           }}
                           className={`flex items-center justify-between p-2.5 text-xs font-medium transition-all ${
                             isSelected

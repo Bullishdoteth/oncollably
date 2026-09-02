@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth/auth"
 import { db } from "@/lib/db/db"
 import { user } from "@/lib/db/schema"
 import { eq } from "drizzle-orm"
+import { invalidateUserCache, setCachedActiveWorkspace } from "@/lib/redis/cache"
 
 export async function POST(request: Request) {
   try {
@@ -20,14 +21,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing workspaceType" }, { status: 400 })
     }
 
+    const targetHandle = handle || session.user.handle
+
     await db
       .update(user)
       .set({
         workspaceType,
-        handle: handle || session.user.handle,
+        handle: targetHandle,
         updatedAt: new Date(),
       })
       .where(eq(user.id, session.user.id))
+
+    // Serverless Redis Cache Update & Invalidation (Fail-Open)
+    await setCachedActiveWorkspace(session.user.id, {
+      userId: session.user.id,
+      workspaceType,
+      handle: targetHandle,
+    })
+    await invalidateUserCache(session.user.id)
 
     return NextResponse.json({
       success: true,
@@ -38,3 +49,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: error.message || "Failed to switch workspace" }, { status: 500 })
   }
 }
+
