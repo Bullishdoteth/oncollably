@@ -4,6 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
+import { authClient, useSession, signOut } from "@/lib/auth/auth-client"
 import {
   LayoutDashboard,
   Rocket,
@@ -95,6 +96,16 @@ export function Sidebar() {
   const pathname = usePathname()
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const [isWorkspaceMenuOpen, setIsWorkspaceMenuOpen] = useState(false)
+
+  const { data: session } = useSession()
+  const userName = session?.user?.name || "Alex Rivera"
+  const userEmail = session?.user?.email || "alex@oncollably.com"
+  const initial = userName.charAt(0).toUpperCase()
+
+  const handleSignOut = async () => {
+    await signOut()
+    window.location.href = "/sign-in"
+  }
 
   // Determine current active space based on path prefix
   const activeSpace: WorkspaceType = pathname.startsWith("/community")
@@ -284,25 +295,26 @@ export function Sidebar() {
           <div className="p-3 rounded-2xl bg-zinc-50/80 border border-zinc-200/60 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-8 h-8 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-xs shrink-0">
-                U
+                {initial}
               </div>
               <div className="min-w-0">
                 <div className="text-xs font-bold text-zinc-900 truncate">
-                  User Account
+                  {userName}
                 </div>
                 <div className="text-[11px] font-medium text-zinc-400 truncate">
-                  user@oncollably.com
+                  {userEmail}
                 </div>
               </div>
             </div>
 
-            <Link
-              href="/sign-in"
+            <button
+              type="button"
+              onClick={handleSignOut}
               title="Sign Out"
-              className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-900 hover:bg-zinc-200/60 transition-colors"
+              className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-900 hover:bg-zinc-200/60 transition-colors cursor-pointer"
             >
               <LogOut className="w-4 h-4 stroke-[1.75]" />
-            </Link>
+            </button>
           </div>
         </div>
       </aside>

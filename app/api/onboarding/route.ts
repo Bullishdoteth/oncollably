@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { optionId, name, handle, discord, twitter, bio, selectedEcosystems } = body;
+    const { optionId, name, handle, discord, twitter, bio, avatarUrl, selectedEcosystems } = body;
 
     let workspaceType = "project";
     if (optionId === "connect_community") {
@@ -46,6 +46,7 @@ export async function POST(request: Request) {
       twitter: twitter?.trim() || null,
       bio: bio?.trim() || null,
       ecosystems: ecosystemsStr,
+      avatarUrl: avatarUrl?.trim() || null,
       status: initialStatus,
       paid: !isPaidOption,
       createdAt: new Date(),
@@ -63,6 +64,7 @@ export async function POST(request: Request) {
           discord: discord?.trim() || null,
           twitter: twitter?.trim() || null,
           bio: bio?.trim() || null,
+          image: avatarUrl?.trim() || null,
           updatedAt: new Date(),
         })
         .where(eq(user.id, session.user.id));

@@ -6,6 +6,8 @@ import { PoweredBadge } from "@/components/marketing/powered-badge"
 import { VerifiedBadge } from "@/components/ui/verified-badge"
 import { XSocialIcon, DiscordIcon, TelegramIcon } from "@/components/ui/icons"
 import { constructMetadata } from "@/lib/og-builder"
+import { ensureSeedData } from "@/lib/db/seed"
+import { getWorkspaceByHandle, getCmPortfolioItems } from "@/lib/db/queries"
 
 interface ProfilePageProps {
   params: Promise<{
@@ -33,13 +35,13 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
   })
 }
 
-const recentWorkHistory = [
+const fallbackWorkHistory = [
   {
     id: "act-1",
     title: "Apex DAOs x CyberSquad Collab",
     role: "Lead Collab Manager",
     type: "Whitelist Allocation",
-    date: "Aug 28, 2026",
+    dateStr: "Aug 28, 2026",
     status: "Completed",
     stats: "50 WL Spots • 340 Entries Verified",
     description: "Successfully orchestrated cross-community whitelist allocation with 100% sybil protection and verified wallet exports.",
@@ -49,7 +51,7 @@ const recentWorkHistory = [
     title: "Solana Collective Partnership Launch",
     role: "Community Growth Strategist",
     type: "Verification & Onboarding",
-    date: "Aug 15, 2026",
+    dateStr: "Aug 15, 2026",
     status: "Verified",
     stats: "Official CM Badge • 5 Communities Partnered",
     description: "Verified community manager credentials and set up automated collab request routing for 5 top-tier Solana DAOs.",
@@ -59,20 +61,10 @@ const recentWorkHistory = [
     title: "Alpha Guild Whitelist Giveaway",
     role: "Campaign Director",
     type: "Giveaway Campaign",
-    date: "Jul 30, 2026",
+    dateStr: "Jul 30, 2026",
     status: "Completed",
     stats: "100 Guaranteed Spots • 1,200 Participants",
     description: "Executed high-converting whitelist campaign for 1,200 participants with real-time winner verification logs.",
-  },
-  {
-    id: "act-4",
-    title: "EVM Builders Guild Onboarding",
-    role: "Collab Advisor",
-    type: "Network Expansion",
-    date: "Jul 12, 2026",
-    status: "Completed",
-    stats: "12 Collab Deals • $10 Pass Activated",
-    description: "Managed portfolio of 12 parallel project proposals with zero DM clutter using Oncollably unified inbox.",
   },
 ]
 
@@ -81,6 +73,17 @@ export default async function CollabManagerProfilePage({ params }: ProfilePagePr
   const rawUsername = resolvedParams.username || "collabmanager"
   const username = decodeURIComponent(rawUsername).replace(/^@/, "")
   const formattedName = username.charAt(0).toUpperCase() + username.slice(1)
+
+  await ensureSeedData()
+
+  const cmWorkspace = await getWorkspaceByHandle(username)
+  const dbPortfolio = cmWorkspace ? await getCmPortfolioItems(undefined, cmWorkspace.id) : []
+  const workHistory = dbPortfolio.length > 0 ? dbPortfolio : fallbackWorkHistory
+
+  const name = cmWorkspace?.name || formattedName
+  const bio = cmWorkspace?.bio || "Full Stack Web3 Collab Manager & Growth Strategist. Managing community partnerships, whitelist allocations, and giveaways for top-tier DAOs."
+  const twitter = cmWorkspace?.twitter ? (cmWorkspace.twitter.startsWith("http") ? cmWorkspace.twitter : `https://x.com/${cmWorkspace.twitter.replace(/^@/, '')}`) : "https://x.com"
+  const discord = cmWorkspace?.discord ? (cmWorkspace.discord.startsWith("http") ? cmWorkspace.discord : `https://${cmWorkspace.discord}`) : "https://discord.com"
 
   return (
     <div className="min-h-screen bg-zinc-50/50 text-zinc-900 selection:bg-zinc-100 selection:text-zinc-900 flex flex-col justify-between">
@@ -107,7 +110,7 @@ export default async function CollabManagerProfilePage({ params }: ProfilePagePr
             <div className="space-y-1">
               <div className="inline-flex items-center justify-center gap-2">
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-zinc-900 tracking-tight">
-                  {formattedName}
+                  {name}
                 </h1>
                 <VerifiedBadge size="lg" color="emerald" />
               </div>
@@ -116,7 +119,7 @@ export default async function CollabManagerProfilePage({ params }: ProfilePagePr
 
             {/* Subtitle / Bio */}
             <p className="text-sm sm:text-base text-zinc-600 max-w-lg mx-auto font-normal leading-relaxed">
-              Full Stack Web3 Collab Manager & Growth Strategist. Managing community partnerships, whitelist allocations, and giveaways for top-tier DAOs.
+              {bio}
             </p>
 
             {/* CTA Button */}
@@ -130,7 +133,7 @@ export default async function CollabManagerProfilePage({ params }: ProfilePagePr
             </div>
           </div>
 
-          {/* Section 1: Info Grid Box (Clean Icons, No Emojis) */}
+          {/* Section 1: Info Grid Box */}
           <div className="bg-white border border-zinc-200 rounded-2xl overflow-hidden mb-6 text-xs sm:text-sm divide-y sm:divide-y-0 sm:divide-x divide-zinc-200 grid grid-cols-1 sm:grid-cols-3">
             <div className="p-4 flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center text-zinc-600 shrink-0">
@@ -163,14 +166,14 @@ export default async function CollabManagerProfilePage({ params }: ProfilePagePr
             </div>
           </div>
 
-          {/* Section 2: Social Links Section (Official Brand SVG Icons) */}
+          {/* Section 2: Social Links Section */}
           <div className="bg-white border border-zinc-200 rounded-2xl p-4 sm:p-5 mb-6 space-y-3">
             <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
               Social Links & Channels
             </p>
             <div className="flex flex-wrap items-center gap-3">
               <a
-                href="https://x.com"
+                href={twitter}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-4 py-2.5 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-xl flex items-center gap-2.5 text-xs font-semibold text-zinc-800 transition-colors cursor-pointer"
@@ -183,7 +186,7 @@ export default async function CollabManagerProfilePage({ params }: ProfilePagePr
               </a>
 
               <a
-                href="https://discord.com"
+                href={discord}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-4 py-2.5 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-xl flex items-center gap-2.5 text-xs font-semibold text-zinc-800 transition-colors cursor-pointer"
@@ -223,7 +226,7 @@ export default async function CollabManagerProfilePage({ params }: ProfilePagePr
             </div>
           </div>
 
-          {/* Section 3: Recent Activities Vertical History Line Graph (Work History) */}
+          {/* Section 3: Recent Activities Vertical History */}
           <div className="bg-white border border-zinc-200 rounded-2xl p-5 sm:p-7 mb-6 space-y-6">
             <div className="flex items-center justify-between border-b border-zinc-100 pb-4">
               <div>
@@ -238,7 +241,7 @@ export default async function CollabManagerProfilePage({ params }: ProfilePagePr
 
             {/* Vertical History Line Timeline Graph */}
             <div className="relative pl-6 sm:pl-8 space-y-8 before:absolute before:left-2.5 sm:before:left-3.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-zinc-200">
-              {recentWorkHistory.map((item) => (
+              {workHistory.map((item) => (
                 <div key={item.id} className="relative group">
                   {/* Timeline Node Icon */}
                   <div className="absolute -left-6 sm:-left-8 top-1 w-5 h-5 rounded-full bg-white border-2 border-black flex items-center justify-center group-hover:border-emerald-600 transition-colors">
@@ -253,7 +256,7 @@ export default async function CollabManagerProfilePage({ params }: ProfilePagePr
                       </h3>
                       <span className="text-xs font-mono text-zinc-400 flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
-                        {item.date}
+                        {item.dateStr}
                       </span>
                     </div>
 
@@ -277,63 +280,9 @@ export default async function CollabManagerProfilePage({ params }: ProfilePagePr
               ))}
             </div>
           </div>
-
-          {/* Section 4: Pinned Collaborations / Campaigns (Border Box) */}
-          <div className="bg-white border border-zinc-200 rounded-2xl p-5 sm:p-6 mb-8 space-y-4">
-            <div className="flex items-center justify-between border-b border-zinc-100 pb-3">
-              <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
-                Pinned Collaborations
-              </h3>
-              <span className="text-xs font-semibold text-zinc-500 font-mono">2 Active</span>
-            </div>
-
-            <div className="space-y-3">
-              <div className="p-4 rounded-xl border border-zinc-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-zinc-300 transition-colors">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-sm font-bold text-zinc-900">Apex Genesis Pass</h4>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      25 Spots Remaining
-                    </span>
-                  </div>
-                  <p className="text-xs text-zinc-500">
-                    Requirements: Follow @ApexDAOs on X, Join Discord, Verify Wallet
-                  </p>
-                </div>
-                <Link
-                  href="/sign-in"
-                  className="px-4 py-2 bg-black hover:bg-zinc-800 text-white text-xs font-semibold rounded-lg text-center cursor-pointer shrink-0"
-                >
-                  Apply Spot
-                </Link>
-              </div>
-
-              <div className="p-4 rounded-xl border border-zinc-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:border-zinc-300 transition-colors">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-sm font-bold text-zinc-900">CyberSquad WL Raid</h4>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
-                      Closing Soon
-                    </span>
-                  </div>
-                  <p className="text-xs text-zinc-500">
-                    Requirements: Verified Collab Manager Submission Only
-                  </p>
-                </div>
-                <Link
-                  href="/sign-in"
-                  className="px-4 py-2 bg-black hover:bg-zinc-800 text-white text-xs font-semibold rounded-lg text-center cursor-pointer shrink-0"
-                >
-                  Apply Spot
-                </Link>
-              </div>
-            </div>
-          </div>
-
         </div>
       </div>
 
-      {/* Powered by badge rendered at the bottom of [username] directory page */}
       <footer className="border-t border-zinc-200 mt-12 bg-white">
         <PoweredBadge />
       </footer>

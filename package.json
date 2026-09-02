@@ -16,6 +16,7 @@
     "@neondatabase/serverless": "^1.1.0",
     "@polar-sh/sdk": "^0.49.0",
     "better-auth": "^1.7.2",
+    "cloudinary": "^2.11.0",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^1.0.0-rc.4",
     "framer-motion": "^13.1.1",

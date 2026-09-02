@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, Suspense } from "react"
+import { useState, useEffect, Suspense, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
 import { toast } from "sonner"
@@ -11,7 +11,12 @@ import {
   ArrowRight,
   ArrowLeft,
   Upload,
-  ChevronRight
+  ChevronRight,
+  CheckCircle2,
+  AlertCircle,
+  Loader2,
+  Image as ImageIcon,
+  X,
 } from "lucide-react"
 import { DiscordIcon, XSocialIcon } from "@/components/ui/icons"
 
@@ -59,6 +64,8 @@ const ECOSYSTEMS = [
 function OnboardingContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   const [step, setStep] = useState<1 | 2>(1)
   const [selectedOptionId, setSelectedOptionId] = useState<string>("launch_campaign")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -71,6 +78,19 @@ function OnboardingContent() {
     bio: "",
     selectedEcosystems: ["Ethereum", "Solana"] as string[],
   })
+
+  const [avatarUrl, setAvatarUrl] = useState("")
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+
+  const [handleStatus, setHandleStatus] = useState<"idle" | "checking" | "available" | "taken">("idle")
+  const [handleError, setHandleError] = useState("")
+
+  const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "https://oncollably.com")
+  const cleanAppUrl = rawAppUrl.replace(/\/$/, "")
+
+  // Projects use /c/handle as public channel for community/CM applications
+  const isProject = selectedOptionId === "launch_campaign"
+  const urlPrefix = isProject ? `${cleanAppUrl}/c/` : `${cleanAppUrl}/@`
 
   // Handle Polar Checkout Return Success URL (?status=success)
   useEffect(() => {
@@ -85,6 +105,86 @@ function OnboardingContent() {
       return () => clearTimeout(timeout)
     }
   }, [searchParams, router])
+
+  // Auto-generate handle when name changes: translate spaces to hyphens (-)
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newName = e.target.value
+    const slugifiedHandle = newName
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]+/g, "")
+      .replace(/\s+/g, "-")
+
+    setFormData({
+      ...formData,
+      name: newName,
+      handle: slugifiedHandle,
+    })
+  }
+
+  // Handle Cloudinary avatar upload
+  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("File size limit", { description: "Please upload an image smaller than 5MB." })
+      return
+    }
+
+    try {
+      setIsUploadingAvatar(true)
+      const data = new FormData()
+      data.append("file", file)
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: data,
+      })
+
+      const result = await res.json()
+      if (!res.ok || !result.url) {
+        throw new Error(result.error || "Failed to upload image")
+      }
+
+      setAvatarUrl(result.url)
+      toast.success("Logo uploaded to Cloudinary!")
+    } catch (err: any) {
+      console.error("Avatar upload error:", err)
+      toast.error("Upload failed", { description: err?.message || "Failed to upload logo." })
+    } finally {
+      setIsUploadingAvatar(false)
+    }
+  }
+
+  // Check handle availability on handle change (debounced)
+  useEffect(() => {
+    if (!formData.handle.trim()) {
+      setHandleStatus("idle")
+      setHandleError("")
+      return
+    }
+
+    setHandleStatus("checking")
+    const timer = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/workspaces/check-handle?handle=${encodeURIComponent(formData.handle)}`)
+        const data = await res.json()
+        if (data.available) {
+          setHandleStatus("available")
+          setHandleError("")
+        } else {
+          setHandleStatus("taken")
+          setHandleError(data.reason || "This handle is already taken. Please choose a different workspace name.")
+        }
+      } catch (err) {
+        console.error("Failed to check handle:", err)
+        setHandleStatus("idle")
+      }
+    }, 350)
+
+    return () => clearTimeout(timer)
+  }, [formData.handle])
 
   const selectedOption = CARDS.find((c) => c.id === selectedOptionId) || CARDS[0]
 
@@ -104,6 +204,14 @@ function OnboardingContent() {
 
   const handleComplete = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (handleStatus === "taken") {
+      toast.error("Handle Taken", {
+        description: "Please choose an available workspace name before proceeding.",
+      })
+      return
+    }
+
     try {
       setIsSubmitting(true)
       const res = await fetch("/api/onboarding", {
@@ -111,6 +219,7 @@ function OnboardingContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           optionId: selectedOptionId,
+          avatarUrl,
           ...formData,
         }),
       })
@@ -229,7 +338,7 @@ function OnboardingContent() {
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-600 hover:text-zinc-900 transition-colors bg-zinc-100 hover:bg-zinc-200/70 px-3.5 py-2 rounded-xl"
+                className="inline-flex items-center gap-2 text-xs font-semibold text-zinc-600 hover:text-zinc-900 transition-colors bg-zinc-100 hover:bg-zinc-200/70 px-3.5 py-2 rounded-xl cursor-pointer"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 Back to step 1
@@ -252,56 +361,144 @@ function OnboardingContent() {
 
             {/* Form Container */}
             <form onSubmit={handleComplete} className="space-y-6 bg-white p-8 sm:p-10 rounded-3xl border border-zinc-200 shadow-xs">
-              {/* Logo / Avatar Upload */}
+              {/* Logo / Avatar Upload via Cloudinary */}
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider block">
-                  Profile Logo / Avatar
+                  Profile Logo / Avatar (Stored on Cloudinary)
                 </label>
-                <div className="border-2 border-dashed border-zinc-200 hover:border-zinc-400 transition-colors rounded-2xl p-6 text-center bg-zinc-50/50 flex flex-col items-center justify-center cursor-pointer group">
-                  <Upload className="w-6 h-6 text-zinc-400 group-hover:text-zinc-900 transition-colors mb-2 stroke-[1.75]" />
-                  <p className="text-xs font-semibold text-zinc-700">
-                    Click to upload logo or drag and drop
-                  </p>
-                  <p className="text-[11px] text-zinc-400 mt-0.5">
-                    PNG, JPG, or SVG (max 4MB)
-                  </p>
-                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleAvatarFileChange}
+                  className="hidden"
+                />
+
+                {avatarUrl ? (
+                  <div className="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/50 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={avatarUrl}
+                        alt="Workspace Logo"
+                        className="w-14 h-14 rounded-xl object-cover border border-emerald-300 shadow-xs"
+                      />
+                      <div>
+                        <div className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                          Logo Uploaded to Cloudinary
+                        </div>
+                        <p className="text-[11px] text-emerald-700 truncate max-w-xs">
+                          {avatarUrl}
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-3 py-1.5 rounded-lg bg-white border border-emerald-300 text-emerald-800 text-xs font-semibold hover:bg-emerald-100 transition-colors cursor-pointer"
+                    >
+                      Change Logo
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-zinc-200 hover:border-zinc-400 transition-colors rounded-2xl p-6 text-center bg-zinc-50/50 flex flex-col items-center justify-center cursor-pointer group"
+                  >
+                    {isUploadingAvatar ? (
+                      <div className="flex flex-col items-center justify-center space-y-2 py-2">
+                        <Loader2 className="w-6 h-6 text-zinc-900 animate-spin" />
+                        <p className="text-xs font-semibold text-zinc-800">
+                          Uploading logo to Cloudinary...
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <Upload className="w-6 h-6 text-zinc-400 group-hover:text-zinc-900 transition-colors mb-2 stroke-[1.75]" />
+                        <p className="text-xs font-semibold text-zinc-700">
+                          Click to upload logo or drag and drop
+                        </p>
+                        <p className="text-[11px] text-zinc-400 mt-0.5">
+                          PNG, JPG, SVG, or WebP (max 5MB) • Uploads to Cloudinary
+                        </p>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Name & Handle Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider block">
-                    Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="Workspace / Profile Name"
-                    className="w-full px-4 py-3 rounded-xl border border-zinc-200 text-sm font-medium text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 transition-all bg-white"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider block">
-                    Handle *
-                  </label>
-                  <div className="relative flex items-center">
-                    <span className="absolute left-3.5 text-xs font-semibold text-zinc-400 select-none">
-                      oncollably.com/
-                    </span>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider block">
+                      Name *
+                    </label>
                     <input
                       type="text"
                       required
-                      value={formData.handle}
-                      onChange={(e) => setFormData({ ...formData, handle: e.target.value })}
-                      placeholder="handle"
-                      className="w-full pl-28 pr-4 py-3 rounded-xl border border-zinc-200 text-sm font-medium text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 transition-all bg-white"
+                      value={formData.name}
+                      onChange={handleNameChange}
+                      placeholder="Workspace / Profile Name"
+                      className="w-full px-4 py-3 rounded-xl border border-zinc-200 text-sm font-medium text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 transition-all bg-white"
                     />
                   </div>
+
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider block">
+                        Handle (Read Only) *
+                      </label>
+                      {handleStatus === "checking" && (
+                        <span className="text-[11px] text-zinc-400 flex items-center gap-1">
+                          <Loader2 className="w-3 h-3 animate-spin text-zinc-600" />
+                          Checking...
+                        </span>
+                      )}
+                      {handleStatus === "available" && (
+                        <span className="text-[11px] font-semibold text-emerald-600 flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                          Available
+                        </span>
+                      )}
+                      {handleStatus === "taken" && (
+                        <span className="text-[11px] font-semibold text-rose-600 flex items-center gap-1">
+                          <AlertCircle className="w-3 h-3 text-rose-600" />
+                          Taken
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="relative flex items-center">
+                      <span className="absolute left-3.5 text-xs font-semibold text-zinc-400 select-none truncate max-w-[180px]">
+                        {urlPrefix.replace(/^https?:\/\//, "")}
+                      </span>
+                      <input
+                        type="text"
+                        required
+                        readOnly
+                        value={formData.handle}
+                        placeholder="auto-generated-handle"
+                        style={{ paddingLeft: `${Math.max(110, (urlPrefix.replace(/^https?:\/\//, "").length * 7) + 20)}px` }}
+                        className={`w-full pr-4 py-3 rounded-xl border text-sm font-medium transition-all bg-zinc-50/80 cursor-not-allowed select-none ${
+                          handleStatus === "taken"
+                            ? "border-rose-300 text-rose-900 bg-rose-50/40"
+                            : handleStatus === "available"
+                            ? "border-emerald-300 text-zinc-900"
+                            : "border-zinc-200 text-zinc-700"
+                        }`}
+                      />
+                    </div>
+                  </div>
                 </div>
+
+                {/* Handle Notification Banner if Taken */}
+                {handleStatus === "taken" && (
+                  <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                    <span>{handleError}</span>
+                  </div>
+                )}
               </div>
 
               {/* Social Connections */}
@@ -352,7 +549,7 @@ function OnboardingContent() {
                         key={eco}
                         type="button"
                         onClick={() => toggleEcosystem(eco)}
-                        className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all border ${
+                        className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all border cursor-pointer ${
                           isSelected
                             ? "bg-zinc-900 text-white border-zinc-900"
                             : "bg-zinc-50 text-zinc-600 border-zinc-200 hover:bg-zinc-100"
@@ -402,7 +599,7 @@ function OnboardingContent() {
               <div className="pt-2 space-y-3">
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || handleStatus === "taken" || isUploadingAvatar}
                   className="w-full py-4 px-6 rounded-2xl bg-zinc-900 hover:bg-black text-white text-sm font-semibold tracking-tight shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (

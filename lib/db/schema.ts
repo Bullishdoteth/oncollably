@@ -69,6 +69,7 @@ export const workspace = pgTable('workspace', {
   twitter: text('twitter'),
   bio: text('bio'),
   ecosystems: text('ecosystems'), // JSON string array or comma-separated
+  avatarUrl: text('avatar_url'),
   status: text('status').notNull().default('pending_payment'), // 'pending_payment', 'active'
   paid: boolean('paid').notNull().default(false),
   createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -92,4 +93,99 @@ export const workspaceSubscription = pgTable('workspace_subscription', {
   productType: text('product_type').notNull().default('workspace_activation'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const campaign = pgTable('campaign', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id')
+    .notNull()
+    .references(() => workspace.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  slug: text('slug').notNull(),
+  description: text('description'),
+  totalSpots: integer('total_spots').notNull().default(50),
+  allocatedSpots: integer('allocated_spots').notNull().default(0),
+  claimedSpots: integer('claimed_spots').notNull().default(0),
+  allocationType: text('allocation_type').notNull().default('guaranteed'), // 'guaranteed', 'fcfs'
+  ecosystem: text('ecosystem').notNull().default('Solana'),
+  status: text('status').notNull().default('active'), // 'active', 'ended', 'draft'
+  expiresAt: timestamp('expires_at'),
+  discordRequirement: boolean('discord_requirement').notNull().default(true),
+  twitterRequirement: boolean('twitter_requirement').notNull().default(true),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const campaignAllocation = pgTable('campaign_allocation', {
+  id: text('id').primaryKey(),
+  campaignId: text('campaign_id')
+    .notNull()
+    .references(() => campaign.id, { onDelete: 'cascade' }),
+  communityWorkspaceId: text('community_workspace_id')
+    .notNull()
+    .references(() => workspace.id, { onDelete: 'cascade' }),
+  allocatedSpots: integer('allocated_spots').notNull().default(10),
+  claimedSpots: integer('claimed_spots').notNull().default(0),
+  status: text('status').notNull().default('accepted'), // 'pending', 'accepted', 'rejected'
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const application = pgTable('application', {
+  id: text('id').primaryKey(),
+  campaignId: text('campaign_id')
+    .notNull()
+    .references(() => campaign.id, { onDelete: 'cascade' }),
+  applicantWorkspaceId: text('applicant_workspace_id')
+    .notNull()
+    .references(() => workspace.id, { onDelete: 'cascade' }),
+  applicantType: text('applicant_type').notNull().default('community'), // 'community', 'cm'
+  requestedSpots: integer('requested_spots').notNull().default(10),
+  status: text('status').notNull().default('pending'), // 'pending', 'accepted', 'rejected'
+  pitchMessage: text('pitch_message'),
+  discordInvite: text('discord_invite'),
+  cmHandle: text('cm_handle'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const entry = pgTable('entry', {
+  id: text('id').primaryKey(),
+  campaignId: text('campaign_id')
+    .notNull()
+    .references(() => campaign.id, { onDelete: 'cascade' }),
+  userId: text('user_id'),
+  walletAddress: text('wallet_address').notNull(),
+  discordTag: text('discord_tag'),
+  xHandle: text('x_handle'),
+  status: text('status').notNull().default('submitted'), // 'submitted', 'verified', 'winner', 'rejected'
+  submittedAt: timestamp('submitted_at').notNull().defaultNow(),
+});
+
+export const cmPortfolio = pgTable('cm_portfolio', {
+  id: text('id').primaryKey(),
+  userId: text('user_id')
+    .notNull()
+    .references(() => user.id, { onDelete: 'cascade' }),
+  workspaceId: text('workspace_id')
+    .references(() => workspace.id, { onDelete: 'cascade' }),
+  title: text('title').notNull(),
+  role: text('role').notNull(),
+  type: text('type').notNull(),
+  dateStr: text('date_str').notNull(),
+  status: text('status').notNull().default('Completed'),
+  stats: text('stats').notNull(),
+  description: text('description').notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const teamMember = pgTable('team_member', {
+  id: text('id').primaryKey(),
+  workspaceId: text('workspace_id')
+    .notNull()
+    .references(() => workspace.id, { onDelete: 'cascade' }),
+  email: text('email').notNull(),
+  role: text('role').notNull().default('manager'), // 'owner', 'admin', 'manager'
+  status: text('status').notNull().default('active'), // 'invited', 'active'
+  createdAt: timestamp('created_at').notNull().defaultNow(),
 });

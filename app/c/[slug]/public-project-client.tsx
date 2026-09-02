@@ -11,20 +11,32 @@ import {
   X,
   Send,
   Clock,
+  Loader2,
 } from "lucide-react"
 import { Logo } from "@/components/ui/logo"
 import { DiscordIcon, XSocialIcon } from "@/components/ui/icons"
 import { Footer } from "@/components/landing/footer"
+import { submitApplicationAction } from "@/lib/db/actions"
 
 interface PublicProjectClientProps {
   slug: string
+  initialWorkspace: any
+  initialCampaigns: any[]
 }
 
-export function PublicProjectClient({ slug }: PublicProjectClientProps) {
+export function PublicProjectClient({
+  slug,
+  initialWorkspace,
+  initialCampaigns = [],
+}: PublicProjectClientProps) {
   const [isApplyModalOpen, setIsApplyModalOpen] = useState(false)
-  const [selectedCampaign, setSelectedCampaign] = useState<string>(
-    "Guaranteed Whitelist Allocation"
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string>(
+    initialCampaigns[0]?.id || ""
   )
+  const [selectedCampaignTitle, setSelectedCampaignTitle] = useState<string>(
+    initialCampaigns[0]?.title || "Guaranteed Whitelist Allocation"
+  )
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const [appForm, setAppForm] = useState({
     communityName: "",
@@ -36,23 +48,65 @@ export function PublicProjectClient({ slug }: PublicProjectClientProps) {
     pitchMessage: "",
   })
 
-  const projectTitle = slug
-    ? slug.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
-    : "CyberSamurai"
+  const projectTitle =
+    initialWorkspace?.name ||
+    (slug ? slug.replace(/-/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()) : "CyberSamurai")
 
-  const handleApplySubmit = (e: React.FormEvent) => {
+  const projectBio =
+    initialWorkspace?.bio ||
+    "Gaming project building on Solana. Request whitelist spot allocations below for your community or alpha group."
+
+  const ecosystems = initialWorkspace?.ecosystems || "Solana Ecosystem • NFT & Gaming"
+  const discordUrl = initialWorkspace?.discord
+    ? (initialWorkspace.discord.startsWith("http") ? initialWorkspace.discord : `https://${initialWorkspace.discord}`)
+    : "https://discord.com"
+  const twitterUrl = initialWorkspace?.twitter
+    ? (initialWorkspace.twitter.startsWith("http") ? initialWorkspace.twitter : `https://x.com/${initialWorkspace.twitter.replace(/^@/, '')}`)
+    : "https://x.com"
+
+  const totalAllocated = initialCampaigns.reduce(
+    (acc, c) => acc + (c.allocatedSpots || 0),
+    0
+  )
+  const totalCapacity = initialCampaigns.reduce(
+    (acc, c) => acc + (c.totalSpots || 50),
+    0
+  )
+  const progressPercent = totalCapacity > 0 ? Math.round((totalAllocated / totalCapacity) * 100) : 70
+
+  const handleApplySubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsApplyModalOpen(false)
-    toast.success(`Application submitted to ${projectTitle}`)
-    setAppForm({
-      communityName: "",
-      communityType: "DAO",
-      memberCount: "",
-      discordInvite: "",
-      requestedSpots: "10",
-      cmHandle: "",
-      pitchMessage: "",
+    setIsSubmitting(true)
+
+    const targetCampaignId = selectedCampaignId || initialCampaigns[0]?.id || "cmp_cybersamurai_1"
+
+    const res = await submitApplicationAction({
+      campaignId: targetCampaignId,
+      applicantWorkspaceId: "ws_alphaseekers", // Default target community workspace
+      applicantType: "community",
+      requestedSpots: parseInt(appForm.requestedSpots, 10) || 10,
+      pitchMessage: appForm.pitchMessage,
+      discordInvite: appForm.discordInvite,
+      cmHandle: appForm.cmHandle,
     })
+
+    setIsSubmitting(false)
+
+    if (res.success) {
+      setIsApplyModalOpen(false)
+      toast.success(`Collab Application submitted to ${projectTitle}!`)
+      setAppForm({
+        communityName: "",
+        communityType: "DAO",
+        memberCount: "",
+        discordInvite: "",
+        requestedSpots: "10",
+        cmHandle: "",
+        pitchMessage: "",
+      })
+    } else {
+      toast.error(res.error || "Failed to submit application")
+    }
   }
 
   return (
@@ -102,19 +156,19 @@ export function PublicProjectClient({ slug }: PublicProjectClientProps) {
                       <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
                     </div>
                     <p className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">
-                      Solana Ecosystem • NFT & Gaming
+                      {ecosystems}
                     </p>
                   </div>
                 </div>
 
                 <p className="text-sm sm:text-base text-zinc-300 font-normal leading-relaxed">
-                  Gaming project building on Solana. Request whitelist spot allocations below for your community or alpha group.
+                  {projectBio}
                 </p>
 
                 {/* Social Links */}
                 <div className="flex items-center gap-3 pt-2">
                   <a
-                    href="https://twitter.com"
+                    href={twitterUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-zinc-300 hover:text-white transition-colors border border-white/10 backdrop-blur-sm"
@@ -123,7 +177,7 @@ export function PublicProjectClient({ slug }: PublicProjectClientProps) {
                     <XSocialIcon className="w-4 h-4" />
                   </a>
                   <a
-                    href="https://discord.com"
+                    href={discordUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-zinc-300 hover:text-white transition-colors border border-white/10 backdrop-blur-sm"
@@ -149,10 +203,13 @@ export function PublicProjectClient({ slug }: PublicProjectClientProps) {
                   Whitelist Spots
                 </span>
                 <div className="text-2xl font-bold text-white">
-                  180 / 250 Allocated
+                  {totalAllocated} / {totalCapacity > 0 ? totalCapacity : 250} Allocated
                 </div>
                 <div className="h-1.5 w-full bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-emerald-400 rounded-full w-[72%]" />
+                  <div
+                    className="h-full bg-emerald-400 rounded-full"
+                    style={{ width: `${Math.min(100, Math.max(10, progressPercent))}%` }}
+                  />
                 </div>
               </div>
             </div>
@@ -173,73 +230,50 @@ export function PublicProjectClient({ slug }: PublicProjectClientProps) {
 
           {/* Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Card 1 */}
-            <div className="p-8 sm:p-9 rounded-3xl bg-white border border-zinc-200/80 hover:border-zinc-900 transition-all duration-300 flex flex-col justify-between space-y-8 hover:shadow-xl">
-              <div className="space-y-5">
-                <div className="flex items-center justify-between">
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-zinc-100 text-zinc-700 border border-zinc-200">
-                    50 Spots Open
-                  </span>
-                  <span className="text-xs font-medium text-zinc-400 flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" />
-                    Ends in 4 days
-                  </span>
+            {initialCampaigns.length > 0 ? (
+              initialCampaigns.map((cmp) => (
+                <div
+                  key={cmp.id}
+                  className="p-8 sm:p-9 rounded-3xl bg-white border border-zinc-200/80 hover:border-zinc-900 transition-all duration-300 flex flex-col justify-between space-y-8 hover:shadow-xl"
+                >
+                  <div className="space-y-5">
+                    <div className="flex items-center justify-between">
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-zinc-100 text-zinc-700 border border-zinc-200">
+                        {cmp.totalSpots - cmp.allocatedSpots} Spots Open ({cmp.allocationType?.toUpperCase() || 'GUARANTEED'})
+                      </span>
+                      <span className="text-xs font-medium text-zinc-400 flex items-center gap-1">
+                        <Clock className="w-3.5 h-3.5" />
+                        Active
+                      </span>
+                    </div>
+
+                    <h3 className="text-xl font-bold text-zinc-900 tracking-tight">
+                      {cmp.title}
+                    </h3>
+
+                    <p className="text-sm text-zinc-500 font-normal leading-relaxed">
+                      {cmp.description || "Allocations for verified DAOs, Web3 alpha groups, and Discord communities with active members."}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setSelectedCampaignId(cmp.id)
+                      setSelectedCampaignTitle(cmp.title)
+                      setIsApplyModalOpen(true)
+                    }}
+                    className="w-full py-3.5 px-4 rounded-xl bg-zinc-900 hover:bg-black text-white text-xs font-semibold tracking-tight shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <span>Apply for Allocation</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
                 </div>
-
-                <h3 className="text-xl font-bold text-zinc-900 tracking-tight">
-                  Guaranteed Whitelist Allocation
-                </h3>
-
-                <p className="text-sm text-zinc-500 font-normal leading-relaxed">
-                  Allocations for verified DAOs, Web3 alpha groups, and Discord communities with active members.
-                </p>
+              ))
+            ) : (
+              <div className="col-span-2 p-8 text-center text-zinc-500 bg-zinc-50 rounded-2xl border border-zinc-200">
+                No active public campaigns at this moment.
               </div>
-
-              <button
-                onClick={() => {
-                  setSelectedCampaign("Guaranteed Whitelist Allocation")
-                  setIsApplyModalOpen(true)
-                }}
-                className="w-full py-3.5 px-4 rounded-xl bg-zinc-900 hover:bg-black text-white text-xs font-semibold tracking-tight shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>Apply for Allocation</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Card 2 */}
-            <div className="p-8 sm:p-9 rounded-3xl bg-white border border-zinc-200/80 hover:border-zinc-900 transition-all duration-300 flex flex-col justify-between space-y-8 hover:shadow-xl">
-              <div className="space-y-5">
-                <div className="flex items-center justify-between">
-                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-zinc-100 text-zinc-700 border border-zinc-200">
-                    20 Spots Open (FCFS)
-                  </span>
-                  <span className="text-xs font-medium text-zinc-400 flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5" />
-                    Ends in 7 days
-                  </span>
-                </div>
-
-                <h3 className="text-xl font-bold text-zinc-900 tracking-tight">
-                  FCFS Whitelist Allocation
-                </h3>
-
-                <p className="text-sm text-zinc-500 font-normal leading-relaxed">
-                  First-come-first-serve allocations for gaming guilds, Solana alpha callers, and Web3 partner communities.
-                </p>
-              </div>
-
-              <button
-                onClick={() => {
-                  setSelectedCampaign("FCFS Whitelist Allocation")
-                  setIsApplyModalOpen(true)
-                }}
-                className="w-full py-3.5 px-4 rounded-xl bg-zinc-900 hover:bg-black text-white text-xs font-semibold tracking-tight shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>Apply for Allocation</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
+            )}
           </div>
         </main>
       </div>
@@ -267,7 +301,7 @@ export function PublicProjectClient({ slug }: PublicProjectClientProps) {
               <div className="flex items-start justify-between border-b border-zinc-100 pb-4">
                 <div>
                   <span className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
-                    {selectedCampaign}
+                    {selectedCampaignTitle}
                   </span>
                   <h3 className="text-xl font-bold text-zinc-900 tracking-tight">
                     Apply for Collaboration
@@ -388,9 +422,14 @@ export function PublicProjectClient({ slug }: PublicProjectClientProps) {
                 <div className="pt-2">
                   <button
                     type="submit"
-                    className="w-full py-3.5 px-4 rounded-xl bg-zinc-900 hover:bg-black text-white text-sm font-semibold tracking-tight shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    disabled={isSubmitting}
+                    className="w-full py-3.5 px-4 rounded-xl bg-zinc-900 hover:bg-black text-white text-sm font-semibold tracking-tight shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                   >
-                    <Send className="w-4 h-4" />
+                    {isSubmitting ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Send className="w-4 h-4" />
+                    )}
                     <span>Submit Collab Application</span>
                   </button>
                 </div>
