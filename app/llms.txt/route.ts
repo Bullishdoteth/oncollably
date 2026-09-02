@@ -1,0 +1,33 @@
+import { NextResponse } from "next/server"
+
+export const dynamic = "force-static"
+export const revalidate = 86400 // Revalidate once per day
+
+export async function GET() {
+  const content = `# Oncollably
+
+> Oncollably is a Web3 collaboration and campaign management platform connecting Web3 projects, community managers, and crypto communities for growth, dealflow, allocations, and partnerships.
+
+## Overview
+
+Oncollably streamlines Web3 marketing, dealflow management, project campaign distribution, and community collaborations with dedicated hubs for Projects, Community Reps, and Collaboration Managers.
+
+## Key Pages
+
+- [Homepage](https://oncollably.com/): Official landing page for Oncollably features, Web3 ecosystem partnerships, and onboarding workflows.
+- [Terms of Service](https://oncollably.com/terms): Official platform terms, compliance standards, and usage agreements.
+- [Privacy Policy](https://oncollably.com/privacy-policy): Privacy commitments, data collection policies, and platform security standards.
+- [Community Directory](https://oncollably.com/c): Public directory of verified Web3 communities, crypto DAOs, and ecosystem partners.
+
+## Optional
+
+- [Public User & Project Profiles](https://oncollably.com/c): Public profiles for Web3 projects, verified handles, communities, and collaboration managers.
+`
+
+  return new NextResponse(content, {
+    headers: {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Cache-Control": "public, max-age=86400, s-maxage=86400, stale-while-revalidate=604800",
+    },
+  })
+}

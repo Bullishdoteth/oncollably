@@ -1,0 +1,36 @@
+# Oncollably Robots.txt
+User-agent: *
+Allow: /
+Allow: /terms
+Allow: /privacy-policy
+Allow: /c/
+Disallow: /project/
+Disallow: /cm/
+Disallow: /community/
+Disallow: /onboarding/
+Disallow: /api/
+Disallow: /sign-in
+Disallow: /create-account
+
+# AI & LLM Crawlers
+User-agent: GPTBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-Web
+User-agent: PerplexityBot
+User-agent: Google-Extended
+User-agent: CCBot
+User-agent: Bytespider
+Allow: /
+Allow: /terms
+Allow: /privacy-policy
+Allow: /c/
+Disallow: /project/
+Disallow: /cm/
+Disallow: /community/
+Disallow: /onboarding/
+Disallow: /api/
+Disallow: /sign-in
+Disallow: /create-account
+
+Sitemap: https://oncollably.com/sitemap.xml
