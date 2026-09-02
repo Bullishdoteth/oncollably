@@ -551,32 +551,34 @@ function OnboardingContent() {
                 </div>
               </div>
 
-              {/* Ecosystem Selection */}
-              <div className="space-y-2">
-                <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider block">
-                  Primary Ecosystems
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {ECOSYSTEMS.map((eco) => {
-                    const isSelected = formData.selectedEcosystems.includes(eco)
-                    return (
-                      <button
-                        key={eco}
-                        type="button"
-                        onClick={() => toggleEcosystem(eco)}
-                        className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all border cursor-pointer ${
-                          isSelected
-                            ? "bg-zinc-900 text-white border-zinc-900"
-                            : "bg-zinc-50 text-zinc-600 border-zinc-200 hover:bg-zinc-100"
-                        }`}
-                      >
-                        {isSelected ? "✓ " : "+ "}
-                        {eco}
-                      </button>
-                    )
-                  })}
+              {/* Ecosystem Selection - Only for Projects */}
+              {selectedOption.id === "launch_campaign" && (
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider block">
+                    Primary Ecosystems
+                  </label>
+                  <div className="flex flex-wrap gap-2">
+                    {ECOSYSTEMS.map((eco) => {
+                      const isSelected = formData.selectedEcosystems.includes(eco)
+                      return (
+                        <button
+                          key={eco}
+                          type="button"
+                          onClick={() => toggleEcosystem(eco)}
+                          className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all border cursor-pointer ${
+                            isSelected
+                              ? "bg-zinc-900 text-white border-zinc-900"
+                              : "bg-zinc-50 text-zinc-600 border-zinc-200 hover:bg-zinc-100"
+                          }`}
+                        >
+                          {isSelected ? "✓ " : "+ "}
+                          {eco}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Bio */}
               <div className="space-y-1.5">
