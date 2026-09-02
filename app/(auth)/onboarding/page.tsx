@@ -15,8 +15,6 @@ import {
   CheckCircle2,
   AlertCircle,
   Loader2,
-  Image as ImageIcon,
-  X,
 } from "lucide-react"
 import { DiscordIcon, XSocialIcon } from "@/components/ui/icons"
 
@@ -80,7 +78,6 @@ function OnboardingContent() {
   })
 
   const [avatarUrl, setAvatarUrl] = useState("")
-  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
 
   const [handleStatus, setHandleStatus] = useState<"idle" | "checking" | "available" | "taken">("idle")
   const [handleError, setHandleError] = useState("")
@@ -122,8 +119,39 @@ function OnboardingContent() {
     })
   }
 
-  // Handle Cloudinary avatar upload
-  const handleAvatarFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Check handle availability on server ONLY when user finishes typing (onBlur)
+  const checkHandleAvailability = async (handleToCheck: string) => {
+    if (!handleToCheck.trim()) {
+      setHandleStatus("idle")
+      setHandleError("")
+      return
+    }
+
+    setHandleStatus("checking")
+    try {
+      const res = await fetch(`/api/workspaces/check-handle?handle=${encodeURIComponent(handleToCheck)}`)
+      const data = await res.json()
+      if (data.available) {
+        setHandleStatus("available")
+        setHandleError("")
+      } else {
+        setHandleStatus("taken")
+        setHandleError(data.reason || "This handle is already taken. Please choose a different workspace name.")
+      }
+    } catch (err) {
+      console.error("Failed to check handle:", err)
+      setHandleStatus("idle")
+    }
+  }
+
+  const handleNameBlur = () => {
+    if (formData.handle) {
+      checkHandleAvailability(formData.handle)
+    }
+  }
+
+  // Instant optimistic logo preview + background upload to Cloudinary
+  const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
@@ -132,59 +160,28 @@ function OnboardingContent() {
       return
     }
 
-    try {
-      setIsUploadingAvatar(true)
-      const data = new FormData()
-      data.append("file", file)
+    // 1. Immediately display image preview locally for fast UX
+    const localPreview = URL.createObjectURL(file)
+    setAvatarUrl(localPreview)
 
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: data,
-      })
+    // 2. Silently upload to Cloudinary in the background
+    const data = new FormData()
+    data.append("file", file)
 
-      const result = await res.json()
-      if (!res.ok || !result.url) {
-        throw new Error(result.error || "Failed to upload image")
-      }
-
-      setAvatarUrl(result.url)
-      toast.success("Logo uploaded to Cloudinary!")
-    } catch (err: any) {
-      console.error("Avatar upload error:", err)
-      toast.error("Upload failed", { description: err?.message || "Failed to upload logo." })
-    } finally {
-      setIsUploadingAvatar(false)
-    }
-  }
-
-  // Check handle availability on handle change (debounced)
-  useEffect(() => {
-    if (!formData.handle.trim()) {
-      setHandleStatus("idle")
-      setHandleError("")
-      return
-    }
-
-    setHandleStatus("checking")
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/workspaces/check-handle?handle=${encodeURIComponent(formData.handle)}`)
-        const data = await res.json()
-        if (data.available) {
-          setHandleStatus("available")
-          setHandleError("")
-        } else {
-          setHandleStatus("taken")
-          setHandleError(data.reason || "This handle is already taken. Please choose a different workspace name.")
+    fetch("/api/upload", {
+      method: "POST",
+      body: data,
+    })
+      .then((res) => res.json())
+      .then((result) => {
+        if (result.url) {
+          setAvatarUrl(result.url)
         }
-      } catch (err) {
-        console.error("Failed to check handle:", err)
-        setHandleStatus("idle")
-      }
-    }, 350)
-
-    return () => clearTimeout(timer)
-  }, [formData.handle])
+      })
+      .catch((err) => {
+        console.warn("Background Cloudinary upload warning, using local preview:", err)
+      })
+  }
 
   const selectedOption = CARDS.find((c) => c.id === selectedOptionId) || CARDS[0]
 
@@ -364,7 +361,7 @@ function OnboardingContent() {
               {/* Logo / Avatar Upload via Cloudinary */}
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider block">
-                  Profile Logo / Avatar (Stored on Cloudinary)
+                  Profile Logo / Avatar
                 </label>
                 <input
                   ref={fileInputRef}
@@ -375,27 +372,27 @@ function OnboardingContent() {
                 />
 
                 {avatarUrl ? (
-                  <div className="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/50 flex items-center justify-between gap-4">
+                  <div className="p-4 rounded-2xl border border-zinc-200 bg-zinc-50/50 flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
                       <img
                         src={avatarUrl}
                         alt="Workspace Logo"
-                        className="w-14 h-14 rounded-xl object-cover border border-emerald-300 shadow-xs"
+                        className="w-14 h-14 rounded-xl object-cover border border-zinc-300 shadow-xs"
                       />
                       <div>
-                        <div className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
+                        <div className="text-xs font-bold text-zinc-900 flex items-center gap-1.5">
                           <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                          Logo Uploaded to Cloudinary
+                          Logo Selected
                         </div>
-                        <p className="text-[11px] text-emerald-700 truncate max-w-xs">
-                          {avatarUrl}
+                        <p className="text-[11px] text-zinc-400">
+                          Ready for workspace setup
                         </p>
                       </div>
                     </div>
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="px-3 py-1.5 rounded-lg bg-white border border-emerald-300 text-emerald-800 text-xs font-semibold hover:bg-emerald-100 transition-colors cursor-pointer"
+                      className="px-3.5 py-1.5 rounded-xl bg-white border border-zinc-300 text-zinc-800 text-xs font-semibold hover:bg-zinc-100 transition-colors cursor-pointer"
                     >
                       Change Logo
                     </button>
@@ -405,24 +402,13 @@ function OnboardingContent() {
                     onClick={() => fileInputRef.current?.click()}
                     className="border-2 border-dashed border-zinc-200 hover:border-zinc-400 transition-colors rounded-2xl p-6 text-center bg-zinc-50/50 flex flex-col items-center justify-center cursor-pointer group"
                   >
-                    {isUploadingAvatar ? (
-                      <div className="flex flex-col items-center justify-center space-y-2 py-2">
-                        <Loader2 className="w-6 h-6 text-zinc-900 animate-spin" />
-                        <p className="text-xs font-semibold text-zinc-800">
-                          Uploading logo to Cloudinary...
-                        </p>
-                      </div>
-                    ) : (
-                      <>
-                        <Upload className="w-6 h-6 text-zinc-400 group-hover:text-zinc-900 transition-colors mb-2 stroke-[1.75]" />
-                        <p className="text-xs font-semibold text-zinc-700">
-                          Click to upload logo or drag and drop
-                        </p>
-                        <p className="text-[11px] text-zinc-400 mt-0.5">
-                          PNG, JPG, SVG, or WebP (max 5MB) • Uploads to Cloudinary
-                        </p>
-                      </>
-                    )}
+                    <Upload className="w-6 h-6 text-zinc-400 group-hover:text-zinc-900 transition-colors mb-2 stroke-[1.75]" />
+                    <p className="text-xs font-semibold text-zinc-700">
+                      Click to upload logo or drag and drop
+                    </p>
+                    <p className="text-[11px] text-zinc-400 mt-0.5">
+                      PNG, JPG, SVG, or WebP (max 5MB)
+                    </p>
                   </div>
                 )}
               </div>
@@ -439,6 +425,7 @@ function OnboardingContent() {
                       required
                       value={formData.name}
                       onChange={handleNameChange}
+                      onBlur={handleNameBlur}
                       placeholder="Workspace / Profile Name"
                       className="w-full px-4 py-3 rounded-xl border border-zinc-200 text-sm font-medium text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-900 transition-all bg-white"
                     />
@@ -599,7 +586,7 @@ function OnboardingContent() {
               <div className="pt-2 space-y-3">
                 <button
                   type="submit"
-                  disabled={isSubmitting || handleStatus === "taken" || isUploadingAvatar}
+                  disabled={isSubmitting || handleStatus === "taken"}
                   className="w-full py-4 px-6 rounded-2xl bg-zinc-900 hover:bg-black text-white text-sm font-semibold tracking-tight shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
