@@ -27,7 +27,6 @@ export async function proxy(request: NextRequest) {
   // 1. Unauthenticated user trying to access protected route -> redirect to sign-in
   if (isProtectedRoute && !sessionToken) {
     const signInUrl = new URL("/sign-in", request.url)
-    signInUrl.searchParams.set("callbackUrl", pathname)
     response = NextResponse.redirect(signInUrl)
   }
   // 2. Authenticated user visiting sign-in/create-account -> redirect to main workspace hub
