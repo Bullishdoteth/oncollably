@@ -15,6 +15,7 @@ interface WorkspaceState {
   isWorkspaceMenuOpen: boolean
   isMobileOpen: boolean
   isSwitching: boolean
+  isNewWorkspaceDialogOpen: boolean
 
   // Actions
   setActiveSpace: (activeSpace: string) => void
@@ -22,6 +23,8 @@ interface WorkspaceState {
   setDbWorkspaces: (workspaces: WorkspaceItem[]) => void
   setIsWorkspaceMenuOpen: (open: boolean | ((prev: boolean) => boolean)) => void
   setIsMobileOpen: (open: boolean | ((prev: boolean) => boolean)) => void
+  setIsNewWorkspaceDialogOpen: (open: boolean) => void
+  openNewWorkspaceModal: () => void
   
   // Optimistic workspace switch action
   selectWorkspace: (workspaceType: string, handle: string) => Promise<boolean>
@@ -34,6 +37,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
   isWorkspaceMenuOpen: false,
   isMobileOpen: false,
   isSwitching: false,
+  isNewWorkspaceDialogOpen: false,
 
   setActiveSpace: (activeSpace) => set({ activeSpace }),
   setActiveHandle: (activeHandle) => set({ activeHandle }),
@@ -48,6 +52,9 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     set((state) => ({
       isMobileOpen: typeof open === "function" ? open(state.isMobileOpen) : open,
     })),
+
+  setIsNewWorkspaceDialogOpen: (open: boolean) => set({ isNewWorkspaceDialogOpen: open }),
+  openNewWorkspaceModal: () => set({ isNewWorkspaceDialogOpen: true, isWorkspaceMenuOpen: false, isMobileOpen: false }),
 
   selectWorkspace: async (workspaceType: string, handle: string) => {
     const previousSpace = get().activeSpace

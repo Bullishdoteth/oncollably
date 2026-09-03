@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server"
+import { auth } from "@/lib/auth/auth"
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -11,6 +12,8 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/project")
 
   const isAuthRoute = pathname === "/sign-in" || pathname === "/create-account"
+  const isOnboardingRoute = pathname === "/onboarding"
+  const isRootRoute = pathname === "/"
 
   // Retrieve session token from cookies
   const sessionToken =
@@ -29,9 +32,31 @@ export async function proxy(request: NextRequest) {
     const signInUrl = new URL("/sign-in", request.url)
     response = NextResponse.redirect(signInUrl)
   }
-  // 2. Authenticated user visiting sign-in/create-account -> redirect to onboarding (which forwards to active workspace if onboarded)
-  else if (isAuthRoute && sessionToken) {
-    response = NextResponse.redirect(new URL("/onboarding", request.url))
+  // 2. Authenticated user
+  else if (sessionToken) {
+    let session = null
+    try {
+      session = await auth.api.getSession({
+        headers: request.headers,
+      })
+    } catch (e) {
+      console.error("[Proxy] Error retrieving session:", e)
+    }
+
+    const isUserOnboarded = Boolean(session?.user && (session.user as any).onboarded)
+    const userWorkspaceType = (session?.user as any)?.workspaceType || "project"
+    const targetWorkspaceUrl = new URL(`/${userWorkspaceType}`, request.url)
+
+    // A. Previously onboarded user visiting /, auth routes, or onboarding -> redirect directly to active workspace
+    if (isUserOnboarded && (isRootRoute || isAuthRoute || isOnboardingRoute)) {
+      response = NextResponse.redirect(targetWorkspaceUrl)
+    }
+    // B. New user (not onboarded) attempting to access /, auth routes, or main workspace routes -> redirect to onboarding
+    else if (!isUserOnboarded && (isRootRoute || isAuthRoute || (isProtectedRoute && !isOnboardingRoute))) {
+      response = NextResponse.redirect(new URL("/onboarding", request.url))
+    } else {
+      response = NextResponse.next()
+    }
   } else {
     response = NextResponse.next()
   }
@@ -48,6 +73,7 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/",
     "/onboarding/:path*",
     "/cm/:path*",
     "/community/:path*",

@@ -14,8 +14,8 @@ export default function RoutesLayout({
       <Sidebar />
 
       {/* Main Page Area */}
-      <main className="flex-1 min-w-0 bg-white">
-        <div className="w-full max-w-7xl mx-auto p-8">
+      <main className="flex-1 min-w-0 bg-white pt-16 lg:pt-0">
+        <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
           {children}
         </div>
       </main>

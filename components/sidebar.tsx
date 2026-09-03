@@ -29,6 +29,7 @@ import {
 } from "lucide-react"
 import { Logo } from "@/components/ui/logo"
 import { useWorkspaceStore } from "@/lib/store/use-workspace-store"
+import { NewWorkspaceDialog } from "@/components/workspace/new-workspace-dialog"
 
 type WorkspaceType = "project" | "community" | "cm"
 
@@ -101,6 +102,7 @@ export function Sidebar() {
   const isWorkspaceMenuOpen = useWorkspaceStore((s) => s.isWorkspaceMenuOpen)
   const setIsWorkspaceMenuOpen = useWorkspaceStore((s) => s.setIsWorkspaceMenuOpen)
   const selectWorkspace = useWorkspaceStore((s) => s.selectWorkspace)
+  const openNewWorkspaceModal = useWorkspaceStore((s) => s.openNewWorkspaceModal)
 
   useEffect(() => {
     if (dbWorkspaces.length === 0) {
@@ -176,7 +178,7 @@ export function Sidebar() {
 
       {/* Sidebar Container */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 w-72 bg-white border-r border-zinc-200/80 flex flex-col justify-between transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+        className={`fixed top-0 bottom-0 left-0 z-50 w-72 shrink-0 bg-white border-r border-zinc-200/80 flex flex-col justify-between transition-transform duration-300 ease-in-out lg:static lg:z-auto lg:h-screen lg:sticky lg:top-0 lg:translate-x-0 ${
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -327,17 +329,18 @@ export function Sidebar() {
                   )}
 
                   <div className="border-t border-zinc-100 pt-1 mt-1">
-                    <Link
-                      href="/onboarding?mode=new_workspace"
+                    <button
+                      type="button"
                       onClick={() => {
                         setIsWorkspaceMenuOpen(false)
                         setIsMobileOpen(false)
+                        openNewWorkspaceModal()
                       }}
-                      className="flex items-center gap-2.5 p-2 text-xs font-semibold text-zinc-900 hover:bg-zinc-100 transition-colors"
+                      className="w-full flex items-center gap-2.5 p-2 text-xs font-semibold text-zinc-900 hover:bg-zinc-100 transition-colors cursor-pointer text-left"
                     >
                       <Plus className="w-4 h-4 text-zinc-600" />
                       <span>Create New Workspace</span>
-                    </Link>
+                    </button>
                   </div>
                 </motion.div>
               )}
@@ -358,56 +361,59 @@ export function Sidebar() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsMobileOpen(false)}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-3 px-3 py-2.5 text-xs font-medium transition-all ${
                     isActive
-                      ? "bg-zinc-900 text-white shadow-2xs"
-                      : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100/80"
+                      ? "bg-zinc-900 text-white font-semibold shadow-xs"
+                      : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100/70"
                   }`}
                 >
-                  <Icon className="w-4 h-4 stroke-[1.75]" />
+                  <Icon className="w-4 h-4 shrink-0 stroke-[1.75]" />
                   <span>{item.label}</span>
                 </Link>
               )
             })}
           </nav>
-        </div>
 
-        {/* User Profile Footer */}
-        <div className="p-4 border-t border-zinc-100">
-          <div className="p-3 bg-zinc-50/80 border border-zinc-200/50 flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              {userImage ? (
-                <img
-                  src={userImage}
-                  alt={userName}
-                  className="w-8 h-8 object-cover border border-zinc-200 shrink-0"
-                />
-              ) : (
-                <div className="w-8 h-8 bg-zinc-900 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                  {initial}
-                </div>
-              )}
-              <div className="min-w-0">
-                <div className="text-xs font-bold text-zinc-900 truncate">
-                  {userName}
-                </div>
-                <div className="text-[11px] font-medium text-zinc-400 truncate">
-                  {userEmail}
+          {/* User Profile Footer */}
+          <div className="p-4 border-t border-zinc-100">
+            <div className="flex items-center justify-between gap-3 p-2 bg-zinc-50 border border-zinc-200/80">
+              <div className="flex items-center gap-3 min-w-0">
+                {userImage ? (
+                  <img
+                    src={userImage}
+                    alt={userName}
+                    className="w-8 h-8 object-cover border border-zinc-200 shrink-0"
+                  />
+                ) : (
+                  <div className="w-8 h-8 bg-zinc-900 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                    {initial}
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <div className="text-xs font-bold text-zinc-900 truncate">
+                    {userName}
+                  </div>
+                  <div className="text-[11px] font-medium text-zinc-400 truncate">
+                    {userEmail}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="p-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-200/60 transition-colors cursor-pointer"
-              title="Sign Out"
-            >
-              <LogOut className="w-4 h-4 stroke-[1.75]" />
-            </button>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="p-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-200/60 transition-colors cursor-pointer"
+                title="Sign Out"
+              >
+                <LogOut className="w-4 h-4 stroke-[1.75]" />
+              </button>
+            </div>
           </div>
         </div>
       </aside>
+
+      {/* Global New Workspace Creation Dialog */}
+      <NewWorkspaceDialog />
     </>
   )
 }
