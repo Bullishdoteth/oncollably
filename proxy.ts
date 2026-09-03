@@ -17,19 +17,34 @@ export async function proxy(request: NextRequest) {
     request.cookies.get("better-auth.session_token")?.value ||
     request.cookies.get("__Secure-better-auth.session_token")?.value
 
+  // Identify any legacy bloated better-auth session_data cookies (and chunks) to purge
+  const legacyCookiesToPurge = request.cookies.getAll().filter((c) =>
+    c.name.includes("better-auth.session_data")
+  )
+
+  let response: NextResponse
+
   // 1. Unauthenticated user trying to access protected route -> redirect to sign-in
   if (isProtectedRoute && !sessionToken) {
     const signInUrl = new URL("/sign-in", request.url)
     signInUrl.searchParams.set("callbackUrl", pathname)
-    return NextResponse.redirect(signInUrl)
+    response = NextResponse.redirect(signInUrl)
   }
-
   // 2. Authenticated user visiting sign-in/create-account -> redirect to main workspace hub
-  if (isAuthRoute && sessionToken) {
-    return NextResponse.redirect(new URL("/project", request.url))
+  else if (isAuthRoute && sessionToken) {
+    response = NextResponse.redirect(new URL("/project", request.url))
+  } else {
+    response = NextResponse.next()
   }
 
-  return NextResponse.next()
+  // Purge any legacy bloated session data cookies if present
+  if (legacyCookiesToPurge.length > 0) {
+    for (const cookie of legacyCookiesToPurge) {
+      response.cookies.delete(cookie.name)
+    }
+  }
+
+  return response
 }
 
 export const config = {
