@@ -29,9 +29,9 @@ export async function proxy(request: NextRequest) {
     const signInUrl = new URL("/sign-in", request.url)
     response = NextResponse.redirect(signInUrl)
   }
-  // 2. Authenticated user visiting sign-in/create-account -> redirect to main workspace hub
+  // 2. Authenticated user visiting sign-in/create-account -> redirect to onboarding (which forwards to active workspace if onboarded)
   else if (isAuthRoute && sessionToken) {
-    response = NextResponse.redirect(new URL("/project", request.url))
+    response = NextResponse.redirect(new URL("/onboarding", request.url))
   } else {
     response = NextResponse.next()
   }

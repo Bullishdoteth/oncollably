@@ -11,7 +11,7 @@ interface GoogleButtonProps {
 
 export function GoogleButton({
   label = "Continue with Google",
-  callbackURL,
+  callbackURL = "/onboarding",
 }: GoogleButtonProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -22,7 +22,7 @@ export function GoogleButton({
       setError(null)
       const res = await signIn.social({
         provider: "google",
-        ...(callbackURL ? { callbackURL } : {}),
+        callbackURL,
       })
       if (res?.error) {
         console.error("Sign in failed:", res.error)
