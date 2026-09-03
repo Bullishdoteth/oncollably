@@ -182,33 +182,34 @@ export function Sidebar() {
           isMobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        {/* Top Header & Branding */}
-        <div>
-          <div className="p-6 pb-4 flex items-center justify-between">
+        {/* Top Section */}
+        <div className="flex flex-col flex-1 min-h-0">
+          {/* Top Header & Branding */}
+          <div className="px-5 py-4 border-b border-zinc-100 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2 group">
               <Logo className="h-7 w-auto transition-transform group-hover:scale-[1.02]" />
             </Link>
 
-            <span className="text-[10px] font-semibold tracking-wider text-zinc-500 uppercase bg-zinc-100 border border-zinc-200 px-2 py-0.5 rounded-none">
+            <span className="text-[10px] font-semibold tracking-wider text-zinc-500 uppercase bg-zinc-100 border border-zinc-200 px-2 py-0.5 rounded-md">
               Beta
             </span>
           </div>
 
           {/* Active Workspace Selector */}
-          <div className="px-5 py-2 relative">
+          <div className="p-3 relative border-b border-zinc-100">
             <button
               onClick={() => setIsWorkspaceMenuOpen((prev) => !prev)}
-              className="w-full flex items-center justify-between p-3 bg-zinc-50 border border-zinc-200/80 hover:border-zinc-300 hover:bg-zinc-100/60 transition-all text-left group"
+              className="w-full flex items-center justify-between p-2.5 bg-zinc-50 border border-zinc-200/80 hover:border-zinc-300 hover:bg-zinc-100/60 rounded-xl transition-all text-left group cursor-pointer"
             >
               <div className="flex items-center gap-3 min-w-0">
                 {activeWorkspaceAvatar ? (
                   <img
                     src={activeWorkspaceAvatar}
                     alt={activeWorkspaceName}
-                    className="w-8 h-8 object-cover border border-zinc-200/80 shrink-0"
+                    className="w-8 h-8 rounded-lg object-cover border border-zinc-200/80 shrink-0"
                   />
                 ) : (
-                  <div className="w-8 h-8 bg-zinc-900 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-zinc-900 text-white flex items-center justify-center font-bold text-xs shrink-0">
                     {activeWorkspaceName.charAt(0).toUpperCase()}
                   </div>
                 )}
@@ -232,7 +233,7 @@ export function Sidebar() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -6 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute left-5 right-5 top-22 bg-white border border-zinc-200/80 shadow-xl p-2 z-50 space-y-1"
+                  className="absolute left-3 right-3 top-16 bg-white border border-zinc-200 shadow-xl rounded-xl p-2 z-50 space-y-1"
                 >
                   <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-zinc-400">
                     Active Workspaces
@@ -248,9 +249,11 @@ export function Sidebar() {
                           key={ws.id}
                           href={wsPath}
                           onClick={() => {
+                            setIsWorkspaceMenuOpen(false)
+                            setIsMobileOpen(false)
                             selectWorkspace(ws.type, ws.handle)
                           }}
-                          className={`flex items-center justify-between p-2.5 text-xs font-medium transition-all ${
+                          className={`flex items-center justify-between p-2.5 text-xs font-medium rounded-lg transition-all ${
                             isSelected
                               ? "bg-zinc-900 text-white font-semibold"
                               : "text-zinc-700 hover:bg-zinc-100/70"
@@ -261,7 +264,7 @@ export function Sidebar() {
                               <img
                                 src={ws.avatarUrl}
                                 alt={ws.name}
-                                className="w-5 h-5 object-cover border border-zinc-200/60 shrink-0"
+                                className="w-5 h-5 rounded-md object-cover border border-zinc-200/60 shrink-0"
                               />
                             ) : (
                               <Rocket className="w-4 h-4 shrink-0 stroke-[1.75]" />
@@ -284,7 +287,7 @@ export function Sidebar() {
                           setIsWorkspaceMenuOpen(false)
                           setIsMobileOpen(false)
                         }}
-                        className={`flex items-center gap-3 p-2.5 text-xs font-medium transition-all ${
+                        className={`flex items-center gap-3 p-2.5 text-xs font-medium rounded-lg transition-all ${
                           activeSpace === "project"
                             ? "bg-zinc-900 text-white font-semibold"
                             : "text-zinc-700 hover:bg-zinc-100/70"
@@ -300,7 +303,7 @@ export function Sidebar() {
                           setIsWorkspaceMenuOpen(false)
                           setIsMobileOpen(false)
                         }}
-                        className={`flex items-center gap-3 p-2.5 text-xs font-medium transition-all ${
+                        className={`flex items-center gap-3 p-2.5 text-xs font-medium rounded-lg transition-all ${
                           activeSpace === "community"
                             ? "bg-zinc-900 text-white font-semibold"
                             : "text-zinc-700 hover:bg-zinc-100/70"
@@ -316,7 +319,7 @@ export function Sidebar() {
                           setIsWorkspaceMenuOpen(false)
                           setIsMobileOpen(false)
                         }}
-                        className={`flex items-center gap-3 p-2.5 text-xs font-medium transition-all ${
+                        className={`flex items-center gap-3 p-2.5 text-xs font-medium rounded-lg transition-all ${
                           activeSpace === "cm"
                             ? "bg-zinc-900 text-white font-semibold"
                             : "text-zinc-700 hover:bg-zinc-100/70"
@@ -336,7 +339,7 @@ export function Sidebar() {
                         setIsMobileOpen(false)
                         openNewWorkspaceModal()
                       }}
-                      className="w-full flex items-center gap-2.5 p-2 text-xs font-semibold text-zinc-900 hover:bg-zinc-100 transition-colors cursor-pointer text-left"
+                      className="w-full flex items-center gap-2.5 p-2 text-xs font-semibold text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors cursor-pointer text-left"
                     >
                       <Plus className="w-4 h-4 text-zinc-600" />
                       <span>Create New Workspace</span>
@@ -348,7 +351,7 @@ export function Sidebar() {
           </div>
 
           {/* Navigation Links */}
-          <nav className="flex-1 px-4 space-y-1.5 overflow-y-auto">
+          <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
             <div className="px-3 pb-2 text-[11px] font-semibold text-zinc-400 uppercase tracking-widest">
               Navigation
             </div>
@@ -361,7 +364,7 @@ export function Sidebar() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setIsMobileOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 text-xs font-medium transition-all ${
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 text-xs font-medium rounded-xl transition-all ${
                     isActive
                       ? "bg-zinc-900 text-white font-semibold shadow-xs"
                       : "text-zinc-600 hover:text-zinc-900 hover:bg-zinc-100/70"
@@ -373,41 +376,41 @@ export function Sidebar() {
               )
             })}
           </nav>
+        </div>
 
-          {/* User Profile Footer */}
-          <div className="p-4 border-t border-zinc-100">
-            <div className="flex items-center justify-between gap-3 p-2 bg-zinc-50 border border-zinc-200/80">
-              <div className="flex items-center gap-3 min-w-0">
-                {userImage ? (
-                  <img
-                    src={userImage}
-                    alt={userName}
-                    className="w-8 h-8 object-cover border border-zinc-200 shrink-0"
-                  />
-                ) : (
-                  <div className="w-8 h-8 bg-zinc-900 text-white font-bold text-xs flex items-center justify-center shrink-0">
-                    {initial}
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <div className="text-xs font-bold text-zinc-900 truncate">
-                    {userName}
-                  </div>
-                  <div className="text-[11px] font-medium text-zinc-400 truncate">
-                    {userEmail}
-                  </div>
+        {/* User Profile Footer */}
+        <div className="p-3 border-t border-zinc-100 bg-zinc-50/50 mt-auto">
+          <div className="flex items-center justify-between gap-3 p-2.5 bg-white border border-zinc-200/80 rounded-xl shadow-xs">
+            <div className="flex items-center gap-3 min-w-0">
+              {userImage ? (
+                <img
+                  src={userImage}
+                  alt={userName}
+                  className="w-8 h-8 rounded-lg object-cover border border-zinc-200 shrink-0"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-lg bg-zinc-900 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                  {initial}
+                </div>
+              )}
+              <div className="min-w-0">
+                <div className="text-xs font-bold text-zinc-900 truncate">
+                  {userName}
+                </div>
+                <div className="text-[11px] font-medium text-zinc-400 truncate">
+                  {userEmail}
                 </div>
               </div>
-
-              <button
-                type="button"
-                onClick={handleSignOut}
-                className="p-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-200/60 transition-colors cursor-pointer"
-                title="Sign Out"
-              >
-                <LogOut className="w-4 h-4 stroke-[1.75]" />
-              </button>
             </div>
+
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="p-1.5 text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 rounded-lg transition-colors cursor-pointer"
+              title="Sign Out"
+            >
+              <LogOut className="w-4 h-4 stroke-[1.75]" />
+            </button>
           </div>
         </div>
       </aside>
