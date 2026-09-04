@@ -2,7 +2,9 @@ import React from "react"
 import { headers } from "next/headers"
 import { auth } from "@/lib/auth/auth"
 import { ensureSeedData } from "@/lib/db/seed"
-import { getUserWorkspaces, getWorkspaceByHandle, getTeamMembers } from "@/lib/db/queries"
+import { getUserWorkspaces, getTeamMembers } from "@/lib/db/queries"
+import { db } from "@/lib/db/db"
+import { workspace } from "@/lib/db/schema"
 import { ProjectTeamClient } from "./project-team-client"
 
 export default async function ProjectTeamPage() {
@@ -16,12 +18,16 @@ export default async function ProjectTeamPage() {
     const userWorkspaces = await getUserWorkspaces(session.user.id)
     currentWorkspace = userWorkspaces.find((w) => w.type === "project") || userWorkspaces[0]
   }
+
   if (!currentWorkspace) {
-    currentWorkspace = await getWorkspaceByHandle("cybersamurai")
+    const [firstWs] = await db.select().from(workspace).limit(1)
+    if (firstWs) {
+      currentWorkspace = firstWs
+    }
   }
 
-  const workspaceId = currentWorkspace?.id || "ws_cybersamurai"
-  const dbMembers = await getTeamMembers(workspaceId)
+  const workspaceId = currentWorkspace?.id || ""
+  const dbMembers = workspaceId ? await getTeamMembers(workspaceId) : []
 
   // Format initial members from DB or session
   const initialMembers = dbMembers.length > 0 ? dbMembers.map((m) => ({
@@ -35,7 +41,7 @@ export default async function ProjectTeamPage() {
     {
       id: session?.user?.id || "owner_1",
       name: session?.user?.name || "Workspace Lead",
-      email: session?.user?.email || "lead@cybersamurai.io",
+      email: session?.user?.email || "lead@oncollably.com",
       role: "Owner",
       status: "Active",
       avatar: (session?.user?.name || "W").charAt(0).toUpperCase(),

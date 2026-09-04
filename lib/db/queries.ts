@@ -7,6 +7,7 @@ import {
   entry,
   cmPortfolio,
   teamMember,
+  communityRepresentative,
   user,
 } from './schema';
 import { eq, and, desc, or } from 'drizzle-orm';
@@ -119,6 +120,35 @@ export async function getCampaignBySlugOrId(slugOrId: string) {
   }
 }
 
+export async function getCampaignByProjectAndSlug(projectHandle: string, campaignSlug: string) {
+  try {
+    const cleanHandle = projectHandle.replace(/^@/, '');
+    const [res] = await db
+      .select({
+        campaign: campaign,
+        workspace: workspace,
+      })
+      .from(campaign)
+      .innerJoin(workspace, eq(campaign.workspaceId, workspace.id))
+      .where(
+        and(
+          or(eq(workspace.handle, cleanHandle), eq(workspace.id, cleanHandle)),
+          or(eq(campaign.slug, campaignSlug), eq(campaign.id, campaignSlug))
+        )
+      );
+
+    if (!res) return null;
+
+    return {
+      campaign: res.campaign,
+      workspace: res.workspace,
+    };
+  } catch (error) {
+    console.error('Error fetching campaign by project and slug:', error);
+    return null;
+  }
+}
+
 /**
  * Applications & Allocations
  */
@@ -139,9 +169,13 @@ export async function getApplicationsForProject(projectWorkspaceId: string) {
     return rows.map((r) => ({
       ...r.application,
       campaignTitle: r.campaign.title,
-      applicantName: r.applicantWorkspace.name,
+      applicantName: r.application.representedCommunityName || r.applicantWorkspace.name,
       applicantHandle: r.applicantWorkspace.handle,
-      applicantType: r.applicantWorkspace.type,
+      applicantType: r.application.representedCommunityType || r.applicantWorkspace.type,
+      discordMemberCount: r.application.discordMemberCount || r.applicantWorkspace.discordMemberCount || 12500,
+      xFollowerCount: r.application.xFollowerCount || r.applicantWorkspace.xFollowerCount || 45000,
+      xHandle: r.application.xHandle || r.applicantWorkspace.twitter || `@${r.applicantWorkspace.handle}`,
+      discordInvite: r.application.discordInvite || r.applicantWorkspace.discord || 'discord.gg/community',
     }));
   } catch (error) {
     console.error('Error fetching applications for project:', error);
@@ -193,8 +227,10 @@ export async function getCollaborationsForCommunity(communityWorkspaceId: string
       ...r.allocation,
       campaignTitle: r.campaign.title,
       campaignSlug: r.campaign.slug,
+      ecosystem: r.campaign.ecosystem,
       projectName: r.projectWorkspace.name,
       projectHandle: r.projectWorkspace.handle,
+      deadline: r.allocation.deadline || r.campaign.walletSubmissionDeadline,
     }));
   } catch (error) {
     console.error('Error fetching collaborations for community:', error);
@@ -202,11 +238,46 @@ export async function getCollaborationsForCommunity(communityWorkspaceId: string
   }
 }
 
+export async function getMasterWalletEntriesForCampaign(campaignId: string) {
+  try {
+    const rows = await db
+      .select({
+        entry: entry,
+        communityWorkspace: workspace,
+      })
+      .from(entry)
+      .leftJoin(workspace, eq(entry.submittedByWorkspaceId, workspace.id))
+      .where(eq(entry.campaignId, campaignId))
+      .orderBy(desc(entry.submittedAt));
+
+    return rows.map((r) => ({
+      id: r.entry.id,
+      walletAddress: r.entry.walletAddress,
+      discordTag: r.entry.discordTag || '',
+      xHandle: r.entry.xHandle || '',
+      communityName: r.communityWorkspace?.name || 'Partner Community',
+      cmHandle: r.communityWorkspace?.handle ? `@${r.communityWorkspace.handle}` : '',
+      submittedAt: r.entry.submittedAt,
+    }));
+  } catch (error) {
+    console.error('Error fetching master wallet entries:', error);
+    return [];
+  }
+}
+
+
 /**
  * CM Portfolios
  */
 export async function getCmPortfolioItems(userId?: string, workspaceId?: string) {
   try {
+    if (workspaceId && userId) {
+      return await db
+        .select()
+        .from(cmPortfolio)
+        .where(or(eq(cmPortfolio.workspaceId, workspaceId), eq(cmPortfolio.userId, userId)))
+        .orderBy(desc(cmPortfolio.createdAt));
+    }
     if (workspaceId) {
       return await db
         .select()
@@ -256,6 +327,19 @@ export async function getTeamMembers(workspaceId: string) {
       .orderBy(desc(teamMember.createdAt));
   } catch (error) {
     console.error('Error fetching team members:', error);
+    return [];
+  }
+}
+
+export async function getCommunityRepresentatives(communityWorkspaceId: string) {
+  try {
+    return await db
+      .select()
+      .from(communityRepresentative)
+      .where(eq(communityRepresentative.communityWorkspaceId, communityWorkspaceId))
+      .orderBy(desc(communityRepresentative.createdAt));
+  } catch (error) {
+    console.error('Error fetching community representatives:', error);
     return [];
   }
 }

@@ -5,9 +5,13 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { Rocket, ArrowLeft, Loader2 } from "lucide-react"
 import { createCampaignAction } from "@/lib/db/actions"
+import { useWorkspaceStore } from "@/lib/store/use-workspace-store"
 
 export default function NewCampaignPage() {
   const router = useRouter()
+  const { dbWorkspaces, activeSpace, activeHandle } = useWorkspaceStore()
+  const currentWorkspace = dbWorkspaces.find((w) => w.type === activeSpace || w.handle === activeHandle) || dbWorkspaces[0]
+
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [form, setForm] = useState({
     title: "",
@@ -27,7 +31,8 @@ export default function NewCampaignPage() {
 
     setIsSubmitting(true)
     const res = await createCampaignAction({
-      workspaceId: "ws_cybersamurai",
+      workspaceId: currentWorkspace?.id,
+      handle: currentWorkspace?.handle,
       title: form.title,
       description: form.description,
       totalSpots: parseInt(form.totalSpots, 10) || 50,

@@ -28,6 +28,7 @@ import {
   ShieldCheck,
 } from "lucide-react"
 import { Logo } from "@/components/ui/logo"
+import { NotificationCenter } from "@/components/notifications/notification-center"
 import { useWorkspaceStore } from "@/lib/store/use-workspace-store"
 import { NewWorkspaceDialog } from "@/components/workspace/new-workspace-dialog"
 
@@ -154,13 +155,16 @@ export function Sidebar() {
           </span>
         </div>
 
-        <button
-          onClick={() => setIsMobileOpen((prev) => !prev)}
-          className="p-2 text-zinc-600 hover:text-zinc-900 transition-colors"
-          aria-label="Toggle menu"
-        >
-          {isMobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <NotificationCenter />
+          <button
+            onClick={() => setIsMobileOpen((prev) => !prev)}
+            className="p-2 text-zinc-600 hover:text-zinc-900 transition-colors cursor-pointer"
+            aria-label="Toggle menu"
+          >
+            {isMobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Overlay */}
@@ -186,13 +190,14 @@ export function Sidebar() {
         <div className="flex flex-col flex-1 min-h-0">
           {/* Top Header & Branding */}
           <div className="px-5 py-4 border-b border-zinc-100 flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2 group">
-              <Logo className="h-7 w-auto transition-transform group-hover:scale-[1.02]" />
-            </Link>
+            <Logo className="h-7 w-auto transition-transform hover:scale-[1.02]" />
 
-            <span className="text-[10px] font-semibold tracking-wider text-zinc-500 uppercase bg-zinc-100 border border-zinc-200 px-2 py-0.5 rounded-md">
-              Beta
-            </span>
+
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-semibold tracking-wider text-zinc-500 uppercase bg-zinc-100 border border-zinc-200 px-2 py-0.5 rounded-md">
+                Beta
+              </span>
+            </div>
           </div>
 
           {/* Active Workspace Selector */}

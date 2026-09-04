@@ -2,6 +2,7 @@
 
 import React from "react"
 import { Sidebar } from "@/components/sidebar"
+import { MainHeader } from "@/components/layout/main-header"
 
 export default function RoutesLayout({
   children,
@@ -13,12 +14,16 @@ export default function RoutesLayout({
       {/* Sidebar Navigation */}
       <Sidebar />
 
-      {/* Main Page Area */}
-      <main className="flex-1 min-w-0 bg-white pt-16 lg:pt-0">
-        <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
-          {children}
-        </div>
-      </main>
+      {/* Main Page Area with Header */}
+      <div className="flex-1 flex flex-col min-w-0 bg-white pt-16 lg:pt-0">
+        <MainHeader />
+        <main className="flex-1 min-w-0">
+          <div className="w-full max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   )
 }
+

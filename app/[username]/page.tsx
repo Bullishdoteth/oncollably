@@ -49,7 +49,7 @@ export default async function PublicProfilePage({ params }: ProfilePageProps) {
     notFound()
   }
 
-  const portfolioItems = await getCmPortfolioItems(undefined, workspaceData.id)
+  const portfolioItems = await getCmPortfolioItems(workspaceData.userId || undefined, workspaceData.id)
 
   const name = workspaceData.name
   const handle = workspaceData.handle

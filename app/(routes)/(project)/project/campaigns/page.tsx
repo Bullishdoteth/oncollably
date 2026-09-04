@@ -1,14 +1,39 @@
 import React from "react"
 import Link from "next/link"
+import { headers } from "next/headers"
 import { Rocket, Plus, Clock, ArrowRight } from "lucide-react"
+import { auth } from "@/lib/auth/auth"
 import { ensureSeedData } from "@/lib/db/seed"
-import { getCampaignsForWorkspace } from "@/lib/db/queries"
+import { getCampaignsForWorkspace, getUserWorkspaces } from "@/lib/db/queries"
+import { db } from "@/lib/db/db"
+import { workspace } from "@/lib/db/schema"
 
 export default async function ProjectCampaignsPage() {
   await ensureSeedData()
 
-  const workspaceId = "ws_cybersamurai"
-  const campaigns = await getCampaignsForWorkspace(workspaceId)
+  const reqHeaders = await headers()
+  const session = await auth.api.getSession({ headers: reqHeaders })
+
+  let campaigns: any[] = []
+  let projectWorkspace: any = null
+
+  if (session?.user?.id) {
+    const userWorkspaces = await getUserWorkspaces(session.user.id)
+    projectWorkspace = userWorkspaces.find((w) => w.type === "project") || userWorkspaces[0]
+    if (projectWorkspace) {
+      campaigns = await getCampaignsForWorkspace(projectWorkspace.id)
+    }
+  }
+
+  if (campaigns.length === 0) {
+    const [firstWs] = await db.select().from(workspace).limit(1)
+    if (firstWs) {
+      projectWorkspace = projectWorkspace || firstWs
+      campaigns = await getCampaignsForWorkspace(firstWs.id)
+    }
+  }
+
+  const projectHandle = projectWorkspace?.handle || ""
 
   return (
     <div className="space-y-8">
@@ -53,7 +78,7 @@ export default async function ProjectCampaignsPage() {
 
                 <div className="space-y-1">
                   <h3 className="text-lg font-bold text-zinc-900 tracking-tight">{cmp.title}</h3>
-                  <p className="text-xs text-zinc-400 font-mono">/c/{cmp.slug}</p>
+                  <p className="text-xs text-zinc-400 font-mono">/c/{projectHandle}/{cmp.slug}</p>
                 </div>
 
                 <p className="text-xs text-zinc-600 leading-relaxed font-normal">
@@ -76,7 +101,7 @@ export default async function ProjectCampaignsPage() {
 
               <div className="pt-2 flex items-center gap-3">
                 <Link
-                  href={`/c/${cmp.slug}`}
+                  href={`/c/${projectHandle}/${cmp.slug}`}
                   target="_blank"
                   className="flex-1 py-2 px-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 text-xs font-medium text-center transition-colors flex items-center justify-center gap-1.5"
                 >

@@ -43,7 +43,9 @@ export function PublicProjectClient({
   const [appForm, setAppForm] = useState({
     communityName: "",
     communityType: "DAO",
-    memberCount: "",
+    memberCount: "12500",
+    xFollowerCount: "45000",
+    xHandle: "",
     discordInvite: "",
     requestedSpots: "10",
     cmHandle: "",
@@ -84,7 +86,12 @@ export function PublicProjectClient({
     const res = await submitApplicationAction({
       campaignId: targetCampaignId,
       applicantWorkspaceId: "ws_alphaseekers", // Default target community workspace
-      applicantType: "community",
+      applicantType: appForm.cmHandle ? "cm" : "community",
+      representedCommunityName: appForm.communityName,
+      representedCommunityType: appForm.communityType,
+      discordMemberCount: parseInt(appForm.memberCount, 10) || 12500,
+      xFollowerCount: parseInt(appForm.xFollowerCount, 10) || 45000,
+      xHandle: appForm.xHandle,
       requestedSpots: parseInt(appForm.requestedSpots, 10) || 10,
       pitchMessage: appForm.pitchMessage,
       discordInvite: appForm.discordInvite,
@@ -99,7 +106,9 @@ export function PublicProjectClient({
       setAppForm({
         communityName: "",
         communityType: "DAO",
-        memberCount: "",
+        memberCount: "12500",
+        xFollowerCount: "45000",
+        xHandle: "",
         discordInvite: "",
         requestedSpots: "10",
         cmHandle: "",

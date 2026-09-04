@@ -4,6 +4,8 @@ import { db } from "@/lib/db/db";
 import { user, workspace } from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { polar, POLAR_PRODUCT_ID } from "@/lib/polar";
+import { sendWorkspaceWelcomeEmail } from "@/services/email";
+import { createInAppNotification } from "@/services/notifications";
 
 export async function POST(request: Request) {
   try {
@@ -53,6 +55,25 @@ export async function POST(request: Request) {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
+
+    // Fire welcome email & in-app notification asynchronously
+    if (session.user.email) {
+      sendWorkspaceWelcomeEmail({
+        to: session.user.email,
+        name: session.user.name || "Creator",
+        workspaceName: formattedName,
+        workspaceType,
+      }).catch((err) => console.error("Error sending workspace welcome email:", err));
+    }
+
+    createInAppNotification({
+      userId: session.user.id,
+      workspaceId,
+      title: "Workspace Created",
+      message: `Welcome to Oncollably! Workspace '${formattedName}' has been successfully created.`,
+      type: "system",
+      link: `/${workspaceType}`,
+    }).catch((err) => console.error("Error creating welcome notification:", err));
 
     // 2. If free workspace (Community / CM), mark user onboarded immediately
     if (!isPaidOption) {

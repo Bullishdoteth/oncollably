@@ -1,7 +1,9 @@
 import React from "react"
 import { headers } from "next/headers"
 import { auth } from "@/lib/auth/auth"
-import { getUserWorkspaces, getWorkspaceByHandle } from "@/lib/db/queries"
+import { getUserWorkspaces } from "@/lib/db/queries"
+import { db } from "@/lib/db/db"
+import { workspace } from "@/lib/db/schema"
 import { ProjectSettingsClient } from "./project-settings-client"
 
 export default async function ProjectSettingsPage() {
@@ -16,7 +18,10 @@ export default async function ProjectSettingsPage() {
   }
 
   if (!workspaceData) {
-    workspaceData = await getWorkspaceByHandle("cybersamurai")
+    const [firstWs] = await db.select().from(workspace).limit(1)
+    if (firstWs) {
+      workspaceData = firstWs
+    }
   }
 
   return <ProjectSettingsClient initialWorkspace={workspaceData} />

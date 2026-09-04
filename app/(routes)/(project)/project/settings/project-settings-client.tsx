@@ -23,13 +23,13 @@ export function ProjectSettingsClient({ initialWorkspace }: ProjectSettingsClien
   const [isSaving, setIsSaving] = useState(false)
 
   const [form, setForm] = useState({
-    name: initialWorkspace?.name || "CyberSamurai NFT",
-    handle: initialWorkspace?.handle || "cybersamurai",
-    bio: initialWorkspace?.bio || "Gaming project building on Solana. Request whitelist spot allocations.",
-    discord: initialWorkspace?.discord || "discord.gg/cybersamurai",
-    twitter: initialWorkspace?.twitter || "@CyberSamuraiNFT",
-    website: initialWorkspace?.website || "https://cybersamurai.io",
-    ecosystems: initialWorkspace?.ecosystems || "Solana,Ethereum",
+    name: initialWorkspace?.name || "",
+    handle: initialWorkspace?.handle || "",
+    bio: initialWorkspace?.bio || "",
+    discord: initialWorkspace?.discord || "",
+    twitter: initialWorkspace?.twitter || "",
+    website: initialWorkspace?.website || "",
+    ecosystems: initialWorkspace?.ecosystems || "Solana",
   })
 
   const [avatarUrl, setAvatarUrl] = useState(initialWorkspace?.avatarUrl || "")
@@ -44,8 +44,8 @@ export function ProjectSettingsClient({ initialWorkspace }: ProjectSettingsClien
     avatarUrl,
   })
 
-  const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "https://oncollably.com")
-  const publicChannelUrl = `${rawAppUrl.replace(/\/$/, "")}/c/${form.handle}`
+  const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL || (typeof window !== "undefined" ? window.location.origin : "")
+  const publicChannelUrl = form.handle ? `${rawAppUrl.replace(/\/$/, "")}/c/${form.handle}` : rawAppUrl
 
   const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -76,7 +76,7 @@ export function ProjectSettingsClient({ initialWorkspace }: ProjectSettingsClien
     e.preventDefault()
     setIsSaving(true)
 
-    const workspaceId = initialWorkspace?.id || "ws_cybersamurai"
+    const workspaceId = initialWorkspace?.id || ""
 
     const res = await updateWorkspaceSettingsAction(workspaceId, {
       name: form.name,

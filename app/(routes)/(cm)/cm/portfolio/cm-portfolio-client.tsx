@@ -8,9 +8,11 @@ import { addPortfolioItemAction } from "@/lib/db/actions"
 
 interface CmPortfolioClientProps {
   initialItems: any[]
+  userId?: string
+  workspaceId?: string
 }
 
-export function CmPortfolioClient({ initialItems = [] }: CmPortfolioClientProps) {
+export function CmPortfolioClient({ initialItems = [], userId, workspaceId }: CmPortfolioClientProps) {
   const [items, setItems] = useState(initialItems)
   const [isAddModalOpen, setIsAddModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -33,7 +35,8 @@ export function CmPortfolioClient({ initialItems = [] }: CmPortfolioClientProps)
 
     setIsSubmitting(true)
     const res = await addPortfolioItemAction({
-      workspaceId: "ws_collabmanager",
+      userId,
+      workspaceId,
       title: form.title,
       role: form.role,
       type: form.type,

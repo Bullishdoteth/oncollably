@@ -6,26 +6,26 @@ import { ensureSeedData } from "@/lib/db/seed"
 import { getWorkspaceByHandle, getCampaignsForWorkspace } from "@/lib/db/queries"
 
 interface PageProps {
-  params: Promise<{ slug: string }>
+  params: Promise<{ projectHandle: string }>
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const resolvedParams = await params
-  const rawSlug = resolvedParams.slug || ""
-  const slug = decodeURIComponent(rawSlug)
+  const rawHandle = resolvedParams.projectHandle || ""
+  const projectHandle = decodeURIComponent(rawHandle)
 
-  const projectWorkspace = await getWorkspaceByHandle(slug)
+  const projectWorkspace = await getWorkspaceByHandle(projectHandle)
 
   if (!projectWorkspace) {
     return constructMetadata({
       title: "Project Not Found | Oncollably",
       description: "The requested project channel does not exist on Oncollably.",
-      path: `/c/${slug}`,
+      path: `/c/${projectHandle}`,
     })
   }
 
   const projectTitle = projectWorkspace.name
-  const title = `${projectTitle} | Web3 Collab Campaign & Whitelist Allocations`
+  const title = `${projectTitle} | Web3 Collab Channel & Whitelist Allocations`
   const description = projectWorkspace.bio || `Apply for ${projectTitle} whitelist spot allocations, collab campaigns, and community partnerships on Oncollably.`
 
   return constructMetadata({
@@ -33,19 +33,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     description,
     imageTitle: projectTitle,
     imageDescription: description,
-    badge: "Public Collab Campaign",
-    path: `/c/${slug}`,
+    badge: "Public Collab Channel",
+    path: `/c/${projectHandle}`,
     type: "website",
   })
 }
 
-export default async function PublicProjectPage({ params }: PageProps) {
-  const { slug } = await params
+export default async function PublicProjectChannelPage({ params }: PageProps) {
+  const { projectHandle } = await params
   await ensureSeedData()
 
-  const projectWorkspace = await getWorkspaceByHandle(slug)
+  const projectWorkspace = await getWorkspaceByHandle(projectHandle)
 
-  // If project workspace does not exist in DB, invoke Next.js notFound()
   if (!projectWorkspace) {
     notFound()
   }
@@ -54,7 +53,7 @@ export default async function PublicProjectPage({ params }: PageProps) {
 
   return (
     <PublicProjectClient
-      slug={slug}
+      slug={projectHandle}
       initialWorkspace={projectWorkspace}
       initialCampaigns={campaigns}
     />

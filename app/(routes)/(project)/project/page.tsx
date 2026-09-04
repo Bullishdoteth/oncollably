@@ -4,7 +4,9 @@ import { headers } from "next/headers"
 import { Rocket, Inbox, Handshake, ArrowRight, Plus, ExternalLink, ShieldCheck } from "lucide-react"
 import { auth } from "@/lib/auth/auth"
 import { ensureSeedData } from "@/lib/db/seed"
-import { getUserWorkspaces, getWorkspaceByHandle, getCampaignsForWorkspace, getApplicationsForProject } from "@/lib/db/queries"
+import { getUserWorkspaces, getCampaignsForWorkspace, getApplicationsForProject } from "@/lib/db/queries"
+import { db } from "@/lib/db/db"
+import { workspace } from "@/lib/db/schema"
 import { verifyProjectWorkspace } from "@/services/verification"
 
 export default async function ProjectDashboardPage() {
@@ -17,12 +19,19 @@ export default async function ProjectDashboardPage() {
 
   if (session?.user) {
     const userWorkspaces = await getUserWorkspaces(session.user.id)
-    currentWorkspace = userWorkspaces.find((w) => w.type === "project") || null
+    currentWorkspace = userWorkspaces.find((w) => w.type === "project") || userWorkspaces[0]
   }
 
-  const workspaceId = currentWorkspace?.id || "ws_cybersamurai"
-  const campaigns = await getCampaignsForWorkspace(workspaceId)
-  const applications = await getApplicationsForProject(workspaceId)
+  if (!currentWorkspace) {
+    const [firstWs] = await db.select().from(workspace).limit(1)
+    if (firstWs) {
+      currentWorkspace = firstWs
+    }
+  }
+
+  const workspaceId = currentWorkspace?.id
+  const campaigns = workspaceId ? await getCampaignsForWorkspace(workspaceId) : []
+  const applications = workspaceId ? await getApplicationsForProject(workspaceId) : []
 
   const activeCampaigns = campaigns.filter((c) => c.status === "active")
   const totalAllocated = campaigns.reduce((acc, c) => acc + (c.allocatedSpots || 0), 0)
@@ -31,7 +40,9 @@ export default async function ProjectDashboardPage() {
 
   const verification = verifyProjectWorkspace(currentWorkspace)
   const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-  const publicChannelUrl = `${rawAppUrl.replace(/\/$/, "")}/c/${currentWorkspace?.handle || "cybersamurai"}`
+  const publicChannelUrl = currentWorkspace?.handle
+    ? `${rawAppUrl.replace(/\/$/, "")}/c/${currentWorkspace.handle}`
+    : rawAppUrl.replace(/\/$/, "")
 
   return (
     <div className="space-y-8">

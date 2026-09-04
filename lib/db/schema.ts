@@ -148,6 +148,7 @@ export const campaign = pgTable('campaign', {
   ecosystem: text('ecosystem').notNull().default('Solana'),
   status: text('status').notNull().default('active'),
   expiresAt: timestamp('expires_at'),
+  walletSubmissionDeadline: timestamp('wallet_submission_deadline'),
   discordRequirement: boolean('discord_requirement').notNull().default(true),
   twitterRequirement: boolean('twitter_requirement').notNull().default(true),
   createdAt: timestamp('created_at').notNull().defaultNow(),
@@ -164,7 +165,9 @@ export const campaignAllocation = pgTable('campaign_allocation', {
     .references(() => workspace.id, { onDelete: 'cascade' }),
   allocatedSpots: integer('allocated_spots').notNull().default(10),
   claimedSpots: integer('claimed_spots').notNull().default(0),
-  status: text('status').notNull().default('accepted'),
+  deadline: timestamp('deadline'),
+  status: text('status').notNull().default('accepted'), // 'accepted', 'completed', 'expired'
+  submittedAt: timestamp('submitted_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
@@ -177,12 +180,19 @@ export const application = pgTable('application', {
   applicantWorkspaceId: text('applicant_workspace_id')
     .notNull()
     .references(() => workspace.id, { onDelete: 'cascade' }),
+  representedCommunityWorkspaceId: text('represented_community_workspace_id'),
+  representedCommunityName: text('represented_community_name'),
+  representedCommunityType: text('represented_community_type'),
+  discordMemberCount: integer('discord_member_count').default(0),
+  xFollowerCount: integer('x_follower_count').default(0),
+  xHandle: text('x_handle'),
   applicantType: text('applicant_type').notNull().default('community'),
   requestedSpots: integer('requested_spots').notNull().default(10),
   status: text('status').notNull().default('pending'),
   pitchMessage: text('pitch_message'),
   discordInvite: text('discord_invite'),
   cmHandle: text('cm_handle'),
+  deadline: timestamp('deadline'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
@@ -192,6 +202,8 @@ export const entry = pgTable('entry', {
   campaignId: text('campaign_id')
     .notNull()
     .references(() => campaign.id, { onDelete: 'cascade' }),
+  allocationId: text('allocation_id'),
+  submittedByWorkspaceId: text('submitted_by_workspace_id'),
   userId: text('user_id'),
   walletAddress: text('wallet_address').notNull(),
   discordTag: text('discord_tag'),
@@ -225,5 +237,31 @@ export const teamMember = pgTable('team_member', {
   email: text('email').notNull(),
   role: text('role').notNull().default('manager'),
   status: text('status').notNull().default('active'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const communityRepresentative = pgTable('community_representative', {
+  id: text('id').primaryKey(),
+  communityWorkspaceId: text('community_workspace_id')
+    .notNull()
+    .references(() => workspace.id, { onDelete: 'cascade' }),
+  cmWorkspaceId: text('cm_workspace_id'),
+  name: text('name').notNull(),
+  handle: text('handle').notNull(),
+  email: text('email'),
+  role: text('role').notNull().default('Collab Manager'),
+  status: text('status').notNull().default('active'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const notification = pgTable('notification', {
+  id: text('id').primaryKey(),
+  userId: text('user_id'),
+  workspaceId: text('workspace_id'),
+  title: text('title').notNull(),
+  message: text('message').notNull(),
+  type: text('type').notNull().default('info'), // 'application', 'allocation', 'campaign', 'system', 'entry'
+  read: boolean('read').notNull().default(false),
+  link: text('link'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });

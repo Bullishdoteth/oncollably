@@ -5,6 +5,8 @@ import { FolderGit2, Send, ArrowRight, UserCheck } from "lucide-react"
 import { auth } from "@/lib/auth/auth"
 import { ensureSeedData } from "@/lib/db/seed"
 import { getCmPortfolioItems, getApplicationsForApplicant, getUserWorkspaces } from "@/lib/db/queries"
+import { db } from "@/lib/db/db"
+import { workspace } from "@/lib/db/schema"
 
 export default async function CmDashboardPage() {
   await ensureSeedData()
@@ -12,19 +14,27 @@ export default async function CmDashboardPage() {
   const reqHeaders = await headers()
   const session = await auth.api.getSession({ headers: reqHeaders })
 
-  let workspaceId = "ws_collabmanager"
-  let cmWorkspace = null
+  let workspaceId: string | undefined
+  let userId: string | undefined = session?.user?.id
 
   if (session?.user) {
     const userWorkspaces = await getUserWorkspaces(session.user.id)
-    cmWorkspace = userWorkspaces.find((w) => w.type === "cm") || null
+    const cmWorkspace = userWorkspaces.find((w) => w.type === "cm") || userWorkspaces[0]
     if (cmWorkspace) {
       workspaceId = cmWorkspace.id
     }
   }
 
-  const portfolioItems = await getCmPortfolioItems(undefined, workspaceId)
-  const applications = await getApplicationsForApplicant(workspaceId)
+  if (!workspaceId) {
+    const [firstWs] = await db.select().from(workspace).limit(1)
+    if (firstWs) {
+      workspaceId = firstWs.id
+      userId = userId || firstWs.userId || undefined
+    }
+  }
+
+  const portfolioItems = await getCmPortfolioItems(userId, workspaceId)
+  const applications = workspaceId ? await getApplicationsForApplicant(workspaceId) : []
 
   return (
     <div className="space-y-8">
