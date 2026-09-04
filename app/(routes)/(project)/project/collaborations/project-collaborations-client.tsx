@@ -35,16 +35,18 @@ export function ProjectCollaborationsClient({ initialCollaborations = [] }: Proj
   })
 
   const handleOpenSheet = (collab: any) => {
+    const allocated = collab.allocatedSpots || collab.requestedSpots || 10
+    const claimed = collab.entries ? collab.entries.length : (collab.claimedSpots || 0)
     setSelectedCollab({
       id: collab.id,
       campaignId: collab.campaignId,
       campaignTitle: collab.campaignTitle || "Campaign",
       campaignSlug: collab.campaignSlug || "campaign",
-      projectName: collab.applicantName || "Partner DAO",
+      projectName: collab.applicantName || collab.representedCommunityName || "Partner DAO",
       projectHandle: collab.applicantHandle || "community",
-      allocatedSpots: collab.requestedSpots || 10,
-      claimedSpots: collab.claimedSpots || 0,
-      status: collab.claimedSpots >= (collab.requestedSpots || 10) ? "completed" : "accepted",
+      allocatedSpots: allocated,
+      claimedSpots: claimed,
+      status: claimed >= allocated ? "completed" : "accepted",
       ecosystem: collab.ecosystem || "Solana",
       entries: collab.entries || [],
     })

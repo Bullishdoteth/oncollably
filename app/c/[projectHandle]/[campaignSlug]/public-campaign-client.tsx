@@ -72,6 +72,8 @@ export function PublicCampaignClient({
   const totalCapacity = campaignData.totalSpots || 50
   const openSpots = Math.max(0, totalCapacity - totalAllocated)
 
+  const isCampaignClosed = campaignData.status === "closed" || campaignData.status === "completed" || totalAllocated >= totalCapacity
+
   const handleWalletSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!walletForm.walletAddress.trim()) {
@@ -100,6 +102,12 @@ export function PublicCampaignClient({
 
   const handleApplySubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (isCampaignClosed) {
+      toast.error("This campaign is closed and is no longer accepting new collaboration applications.")
+      return
+    }
+
     setIsSubmitting(true)
 
     const res = await submitApplicationAction({
@@ -234,7 +242,9 @@ export function PublicCampaignClient({
               </div>
               <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
                 <div className="text-zinc-400 font-medium">Status</div>
-                <div className="text-xl font-bold text-emerald-400 capitalize">{campaignData.status || "Active"}</div>
+                <div className={`text-xl font-bold capitalize ${isCampaignClosed ? "text-rose-400" : "text-emerald-400"}`}>
+                  {isCampaignClosed ? "Closed (Full)" : campaignData.status || "Active"}
+                </div>
               </div>
             </div>
           </div>
@@ -257,13 +267,23 @@ export function PublicCampaignClient({
                 <span>Submit Wallet Address</span>
               </button>
 
-              <button
-                onClick={() => setModalMode("collab_app")}
-                className="px-6 py-3 rounded-xl bg-zinc-900 hover:bg-black text-white text-sm font-bold shadow-md transition-all flex items-center gap-2 cursor-pointer"
-              >
-                <Building2 className="w-4 h-4" />
-                <span>Apply for DAO Allocation</span>
-              </button>
+              {!isCampaignClosed ? (
+                <button
+                  onClick={() => setModalMode("collab_app")}
+                  className="px-6 py-3 rounded-xl bg-zinc-900 hover:bg-black text-white text-sm font-bold shadow-md transition-all flex items-center gap-2 cursor-pointer"
+                >
+                  <Building2 className="w-4 h-4" />
+                  <span>Apply for DAO Allocation</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => toast.error("No remaining slots available for this campaign.")}
+                  className="px-6 py-3 rounded-xl bg-zinc-100 text-zinc-400 text-sm font-bold border border-zinc-200 cursor-not-allowed flex items-center gap-2"
+                >
+                  <Building2 className="w-4 h-4 text-zinc-400" />
+                  <span>Campaign Closed (No Remaining Slots)</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

@@ -82,6 +82,10 @@ export function WalletSubmissionSheet({
   }
 
   const handleAddRow = () => {
+    if (rows.length >= allocatedSpots) {
+      toast.error(`Cannot add more rows than the required ${allocatedSpots} spots.`)
+      return
+    }
     setRows((prev) => [...prev, { walletAddress: "", discordTag: "", xHandle: "" }])
   }
 
@@ -91,7 +95,7 @@ export function WalletSubmissionSheet({
   }
 
   const handleParseBulkText = () => {
-    const lines = bulkText
+    let lines = bulkText
       .split("\n")
       .map((l) => l.trim())
       .filter((l) => l.length > 0)
@@ -101,8 +105,12 @@ export function WalletSubmissionSheet({
       return
     }
 
+    if (lines.length > allocatedSpots) {
+      lines = lines.slice(0, allocatedSpots)
+      toast.info(`Parsed input truncated to the required ${allocatedSpots} wallet spots.`)
+    }
+
     const newRows: WalletRow[] = lines.map((line) => {
-      // Split CSV or space separated lines if applicable
       const parts = line.split(/[,;\t]+/).map((p) => p.trim())
       return {
         walletAddress: parts[0] || "",
@@ -125,10 +133,16 @@ export function WalletSubmissionSheet({
       const content = event.target?.result as string
       if (content) {
         setBulkText(content)
-        const lines = content
+        let lines = content
           .split("\n")
           .map((l) => l.trim())
           .filter((l) => l.length > 0)
+
+        if (lines.length > allocatedSpots) {
+          lines = lines.slice(0, allocatedSpots)
+          toast.info(`CSV file truncated to the required ${allocatedSpots} wallet spots.`)
+        }
+
         const newRows: WalletRow[] = lines.map((line) => {
           const parts = line.split(/[,;\t]+/).map((p) => p.trim())
           return {
@@ -154,6 +168,11 @@ export function WalletSubmissionSheet({
 
     if (validWallets.length === 0) {
       toast.error("Please enter at least 1 valid wallet address.")
+      return
+    }
+
+    if (validWallets.length > allocatedSpots) {
+      toast.error(`You cannot submit more than the required ${allocatedSpots} wallets for this allocation.`)
       return
     }
 

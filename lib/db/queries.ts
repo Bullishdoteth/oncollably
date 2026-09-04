@@ -223,17 +223,176 @@ export async function getCollaborationsForCommunity(communityWorkspaceId: string
       .where(eq(campaignAllocation.communityWorkspaceId, communityWorkspaceId))
       .orderBy(desc(campaignAllocation.createdAt));
 
-    return rows.map((r) => ({
-      ...r.allocation,
-      campaignTitle: r.campaign.title,
-      campaignSlug: r.campaign.slug,
-      ecosystem: r.campaign.ecosystem,
-      projectName: r.projectWorkspace.name,
-      projectHandle: r.projectWorkspace.handle,
-      deadline: r.allocation.deadline || r.campaign.walletSubmissionDeadline,
-    }));
+    const result = [];
+    for (const r of rows) {
+      const entries = await db
+        .select()
+        .from(entry)
+        .where(
+          or(
+            eq(entry.allocationId, r.allocation.id),
+            and(
+              eq(entry.campaignId, r.allocation.campaignId),
+              eq(entry.submittedByWorkspaceId, communityWorkspaceId)
+            )
+          )
+        )
+        .orderBy(desc(entry.submittedAt));
+
+      const claimedSpots = entries.length > 0 ? entries.length : r.allocation.claimedSpots;
+
+      result.push({
+        ...r.allocation,
+        campaignTitle: r.campaign.title,
+        campaignSlug: r.campaign.slug,
+        ecosystem: r.campaign.ecosystem,
+        projectName: r.projectWorkspace.name,
+        projectHandle: r.projectWorkspace.handle,
+        deadline: r.allocation.deadline || r.campaign.walletSubmissionDeadline,
+        claimedSpots,
+        status: claimedSpots >= r.allocation.allocatedSpots ? 'completed' : r.allocation.status,
+        entries: entries.map((e) => ({
+          id: e.id,
+          walletAddress: e.walletAddress,
+          discordTag: e.discordTag || '',
+          xHandle: e.xHandle || '',
+          submittedAt: e.submittedAt,
+        })),
+      });
+    }
+
+    return result;
   } catch (error) {
     console.error('Error fetching collaborations for community:', error);
+    return [];
+  }
+}
+
+export async function getCollaborationsForProject(projectWorkspaceId: string) {
+  try {
+    const rows = await db
+      .select({
+        allocation: campaignAllocation,
+        campaign: campaign,
+        applicantWorkspace: workspace,
+      })
+      .from(campaignAllocation)
+      .innerJoin(campaign, eq(campaignAllocation.campaignId, campaign.id))
+      .innerJoin(workspace, eq(campaignAllocation.communityWorkspaceId, workspace.id))
+      .where(eq(campaign.workspaceId, projectWorkspaceId))
+      .orderBy(desc(campaignAllocation.createdAt));
+
+    const result: any[] = [];
+
+    for (const r of rows) {
+      const entries = await db
+        .select()
+        .from(entry)
+        .where(
+          or(
+            eq(entry.allocationId, r.allocation.id),
+            and(
+              eq(entry.campaignId, r.allocation.campaignId),
+              eq(entry.submittedByWorkspaceId, r.allocation.communityWorkspaceId)
+            )
+          )
+        )
+        .orderBy(desc(entry.submittedAt));
+
+      const claimedSpots = entries.length > 0 ? entries.length : r.allocation.claimedSpots;
+
+      result.push({
+        id: r.allocation.id,
+        campaignId: r.campaign.id,
+        campaignTitle: r.campaign.title,
+        campaignSlug: r.campaign.slug,
+        ecosystem: r.campaign.ecosystem || 'Solana',
+        communityWorkspaceId: r.allocation.communityWorkspaceId,
+        applicantName: r.applicantWorkspace.name,
+        applicantHandle: r.applicantWorkspace.handle,
+        representedCommunityName: r.applicantWorkspace.name,
+        requestedSpots: r.allocation.allocatedSpots,
+        allocatedSpots: r.allocation.allocatedSpots,
+        claimedSpots,
+        status: claimedSpots >= r.allocation.allocatedSpots ? 'completed' : r.allocation.status,
+        deadline: r.allocation.deadline || r.campaign.walletSubmissionDeadline,
+        createdAt: r.allocation.createdAt,
+        entries: entries.map((e) => ({
+          id: e.id,
+          walletAddress: e.walletAddress,
+          discordTag: e.discordTag || '',
+          xHandle: e.xHandle || '',
+          submittedAt: e.submittedAt,
+        })),
+      });
+    }
+
+    // Fallback for accepted applications in application table without allocation rows
+    const appRows = await db
+      .select({
+        application: application,
+        campaign: campaign,
+        applicantWorkspace: workspace,
+      })
+      .from(application)
+      .innerJoin(campaign, eq(application.campaignId, campaign.id))
+      .innerJoin(workspace, eq(application.applicantWorkspaceId, workspace.id))
+      .where(
+        and(
+          eq(campaign.workspaceId, projectWorkspaceId),
+          or(eq(application.status, 'accepted'), eq(application.status, 'completed'))
+        )
+      );
+
+    for (const app of appRows) {
+      const exists = result.some(
+        (res) =>
+          res.campaignId === app.campaign.id &&
+          res.communityWorkspaceId === app.application.applicantWorkspaceId
+      );
+      if (!exists) {
+        const entries = await db
+          .select()
+          .from(entry)
+          .where(
+            and(
+              eq(entry.campaignId, app.campaign.id),
+              eq(entry.submittedByWorkspaceId, app.application.applicantWorkspaceId)
+            )
+          )
+          .orderBy(desc(entry.submittedAt));
+
+        const reqSpots = app.application.requestedSpots || 10;
+        result.push({
+          id: app.application.id,
+          campaignId: app.campaign.id,
+          campaignTitle: app.campaign.title,
+          campaignSlug: app.campaign.slug,
+          ecosystem: app.campaign.ecosystem || 'Solana',
+          communityWorkspaceId: app.application.applicantWorkspaceId,
+          applicantName: app.application.representedCommunityName || app.applicantWorkspace.name,
+          applicantHandle: app.applicantWorkspace.handle,
+          representedCommunityName: app.application.representedCommunityName || app.applicantWorkspace.name,
+          requestedSpots: reqSpots,
+          allocatedSpots: reqSpots,
+          claimedSpots: entries.length,
+          status: entries.length >= reqSpots ? 'completed' : 'accepted',
+          deadline: app.application.deadline,
+          createdAt: app.application.createdAt,
+          entries: entries.map((e) => ({
+            id: e.id,
+            walletAddress: e.walletAddress,
+            discordTag: e.discordTag || '',
+            xHandle: e.xHandle || '',
+            submittedAt: e.submittedAt,
+          })),
+        });
+      }
+    }
+
+    return result;
+  } catch (error) {
+    console.error('Error fetching collaborations for project:', error);
     return [];
   }
 }

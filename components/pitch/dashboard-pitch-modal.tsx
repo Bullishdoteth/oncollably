@@ -48,10 +48,22 @@ export function DashboardPitchModal({
     }
   }, [userWorkspace, isOpen])
 
+  const isCampaignClosed = campaign?.status === "closed" || campaign?.status === "completed" || (campaign?.allocatedSpots || 0) >= (campaign?.totalSpots || 50)
+
   if (!isOpen || !campaign) return null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (isCampaignClosed) {
+      toast.error("This campaign is closed and is no longer accepting new collaboration pitches.")
+      return
+    }
+
+    if (isCampaignClosed) {
+      toast.error("No remaining slots available for this campaign.")
+      return
+    }
 
     if (!form.communityName.trim()) {
       toast.error("Please provide the community name you are representing.")
@@ -168,6 +180,12 @@ export function DashboardPitchModal({
 
           {/* Pitching Form Body */}
           <form onSubmit={handleSubmit} className="p-6 sm:p-7 space-y-5 max-h-[75vh] overflow-y-auto">
+            {isCampaignClosed && (
+              <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold rounded-xl flex items-center justify-between">
+                <span>🔒 Campaign Closed — All allocated spots for this campaign have been completed. No new pitches are accepted.</span>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-zinc-800 uppercase tracking-wide mb-1.5">
@@ -336,8 +354,7 @@ export function DashboardPitchModal({
               </button>
               <button
                 type="submit"
-
-                disabled={isSubmitting}
+                disabled={isSubmitting || isCampaignClosed}
                 className="px-6 py-2.5 bg-zinc-900 hover:bg-black text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {isSubmitting ? (

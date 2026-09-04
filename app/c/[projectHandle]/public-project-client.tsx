@@ -77,11 +77,25 @@ export function PublicProjectClient({
   )
   const progressPercent = totalCapacity > 0 ? Math.round((totalAllocated / totalCapacity) * 100) : 70
 
+  const areAllCampaignsClosed = initialCampaigns.length > 0 && initialCampaigns.every(
+    (c) => c.status === "closed" || c.status === "completed" || (c.allocatedSpots || 0) >= c.totalSpots
+  )
+
   const handleApplySubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsSubmitting(true)
 
     const targetCampaignId = selectedCampaignId || initialCampaigns[0]?.id || "cmp_cybersamurai_1"
+    const targetCmp = initialCampaigns.find((c) => c.id === targetCampaignId)
+    const isTargetClosed = targetCmp
+      ? (targetCmp.status === "closed" || targetCmp.status === "completed" || (targetCmp.allocatedSpots || 0) >= targetCmp.totalSpots)
+      : false
+
+    if (isTargetClosed) {
+      toast.error("No remaining slots available for this campaign.")
+      return
+    }
+
+    setIsSubmitting(true)
 
     const res = await submitApplicationAction({
       campaignId: targetCampaignId,
@@ -148,10 +162,20 @@ export function PublicProjectClient({
               <div className="flex items-center gap-4">
                 {initialCampaigns.length > 0 && (
                   <button
-                    onClick={() => setIsApplyModalOpen(true)}
-                    className="px-4 py-2.5 rounded-xl bg-white hover:bg-zinc-100 text-zinc-900 text-xs font-bold shadow-xs hover:shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                    onClick={() => {
+                      if (areAllCampaignsClosed) {
+                        toast.error("No remaining slots available for this project's campaigns.")
+                        return
+                      }
+                      setIsApplyModalOpen(true)
+                    }}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                      areAllCampaignsClosed
+                        ? "bg-white/20 text-white/60 cursor-not-allowed border border-white/10"
+                        : "bg-white hover:bg-zinc-100 text-zinc-900 shadow-xs hover:shadow-md cursor-pointer"
+                    }`}
                   >
-                    <span>Apply for Collab</span>
+                    <span>{areAllCampaignsClosed ? "No Slots Remaining" : "Apply for Collab"}</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 )}
@@ -310,44 +334,61 @@ export function PublicProjectClient({
           {/* Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {initialCampaigns.length > 0 ? (
-              initialCampaigns.map((cmp) => (
-                <div
-                  key={cmp.id}
-                  className="p-8 sm:p-9 rounded-3xl bg-white border border-zinc-200/80 hover:border-zinc-900 transition-all duration-300 flex flex-col justify-between space-y-8 hover:shadow-xl"
-                >
-                  <div className="space-y-5">
-                    <div className="flex items-center justify-between">
-                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-zinc-100 text-zinc-700 border border-zinc-200">
-                        {cmp.totalSpots - cmp.allocatedSpots} Spots Open ({cmp.allocationType?.toUpperCase() || 'GUARANTEED'})
-                      </span>
-                      <span className="text-xs font-medium text-zinc-400 flex items-center gap-1">
-                        <Clock className="w-3.5 h-3.5" />
-                        Active
-                      </span>
+              initialCampaigns.map((cmp) => {
+                const isCmpClosed = cmp.status === "closed" || cmp.status === "completed" || (cmp.allocatedSpots || 0) >= cmp.totalSpots
+                const openSpots = Math.max(0, cmp.totalSpots - (cmp.allocatedSpots || 0))
+
+                return (
+                  <div
+                    key={cmp.id}
+                    className="p-8 sm:p-9 rounded-3xl bg-white border border-zinc-200/80 hover:border-zinc-900 transition-all duration-300 flex flex-col justify-between space-y-8 hover:shadow-xl"
+                  >
+                    <div className="space-y-5">
+                      <div className="flex items-center justify-between">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${
+                          isCmpClosed
+                            ? "bg-rose-50 text-rose-700 border-rose-200"
+                            : "bg-zinc-100 text-zinc-700 border-zinc-200"
+                        }`}>
+                          {isCmpClosed ? "0 Spots Open (Closed)" : `${openSpots} Spots Open (${cmp.allocationType?.toUpperCase() || 'GUARANTEED'})`}
+                        </span>
+                        <span className={`text-xs font-medium flex items-center gap-1 ${isCmpClosed ? "text-rose-500" : "text-zinc-400"}`}>
+                          <Clock className="w-3.5 h-3.5" />
+                          {isCmpClosed ? "Closed" : "Active"}
+                        </span>
+                      </div>
+
+                      <h3 className="text-xl font-bold text-zinc-900 tracking-tight">
+                        {cmp.title}
+                      </h3>
+
+                      <p className="text-sm text-zinc-500 font-normal leading-relaxed">
+                        {cmp.description || "Allocations for verified DAOs, Web3 alpha groups, and Discord communities with active members."}
+                      </p>
                     </div>
 
-                    <h3 className="text-xl font-bold text-zinc-900 tracking-tight">
-                      {cmp.title}
-                    </h3>
-
-                    <p className="text-sm text-zinc-500 font-normal leading-relaxed">
-                      {cmp.description || "Allocations for verified DAOs, Web3 alpha groups, and Discord communities with active members."}
-                    </p>
+                    <button
+                      onClick={() => {
+                        if (isCmpClosed) {
+                          toast.error("No remaining slots available for this campaign.")
+                          return
+                        }
+                        setSelectedCampaignId(cmp.id)
+                        setSelectedCampaignTitle(cmp.title)
+                        setIsApplyModalOpen(true)
+                      }}
+                      className={`w-full py-3.5 px-4 rounded-xl text-xs font-semibold tracking-tight shadow-xs transition-all flex items-center justify-center gap-2 ${
+                        isCmpClosed
+                          ? "bg-zinc-100 text-zinc-400 border border-zinc-200 cursor-not-allowed"
+                          : "bg-zinc-900 hover:bg-black text-white hover:shadow-md cursor-pointer"
+                      }`}
+                    >
+                      <span>{isCmpClosed ? "No Spots Remaining" : "Apply for Allocation"}</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
                   </div>
-
-                  <button
-                    onClick={() => {
-                      setSelectedCampaignId(cmp.id)
-                      setSelectedCampaignTitle(cmp.title)
-                      setIsApplyModalOpen(true)
-                    }}
-                    className="w-full py-3.5 px-4 rounded-xl bg-zinc-900 hover:bg-black text-white text-xs font-semibold tracking-tight shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <span>Apply for Allocation</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-              ))
+                )
+              })
             ) : (
               <div className="col-span-2 p-8 text-center text-zinc-500 bg-zinc-50 rounded-2xl border border-zinc-200">
                 No active public campaigns at this moment.

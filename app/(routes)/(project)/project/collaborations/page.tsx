@@ -2,7 +2,7 @@ import React from "react"
 import { headers } from "next/headers"
 import { auth } from "@/lib/auth/auth"
 import { ensureSeedData } from "@/lib/db/seed"
-import { getUserWorkspaces, getApplicationsForProject } from "@/lib/db/queries"
+import { getUserWorkspaces, getCollaborationsForProject } from "@/lib/db/queries"
 import { db } from "@/lib/db/db"
 import { workspace } from "@/lib/db/schema"
 import { ProjectCollaborationsClient } from "./project-collaborations-client"
@@ -27,8 +27,7 @@ export default async function ProjectCollaborationsPage() {
   }
 
   const workspaceId = currentWorkspace?.id
-  const applications = workspaceId ? await getApplicationsForProject(workspaceId) : []
-  const acceptedCollabs = applications.filter((a) => a.status === "accepted" || a.status === "completed")
+  const acceptedCollabs = workspaceId ? await getCollaborationsForProject(workspaceId) : []
 
   return <ProjectCollaborationsClient initialCollaborations={acceptedCollabs} />
 }

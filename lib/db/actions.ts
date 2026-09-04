@@ -160,6 +160,24 @@ export async function submitApplicationAction(data: {
   cmHandle?: string;
 }) {
   try {
+    // 1. Check if campaign exists and if it is closed/full
+    const [cmpRecord] = await db.select().from(campaign).where(eq(campaign.id, data.campaignId));
+    if (!cmpRecord) {
+      return { success: false, error: 'Campaign not found' };
+    }
+
+    const isClosed =
+      cmpRecord.status === 'closed' ||
+      cmpRecord.status === 'completed' ||
+      (cmpRecord.allocatedSpots || 0) >= cmpRecord.totalSpots;
+
+    if (isClosed) {
+      return {
+        success: false,
+        error: 'This campaign is closed and is no longer accepting new collaboration applications.',
+      };
+    }
+
     const id = `app_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
     await db.insert(application).values({
@@ -183,7 +201,6 @@ export async function submitApplicationAction(data: {
     });
 
     // Fetch target campaign and project workspace details
-    const [cmpRecord] = await db.select().from(campaign).where(eq(campaign.id, data.campaignId));
     const [applicantWs] = await db.select().from(workspace).where(eq(workspace.id, data.applicantWorkspaceId));
 
     if (cmpRecord) {
@@ -288,6 +305,18 @@ export async function updateApplicationStatusAction(
           updatedAt: new Date(),
         })
         .where(eq(campaign.id, appRecord.campaignId));
+
+      // Auto-close campaign if total allocated spots reaches or exceeds totalSpots capacity
+      const [updatedCmp] = await db.select().from(campaign).where(eq(campaign.id, appRecord.campaignId));
+      if (updatedCmp && (updatedCmp.allocatedSpots || 0) >= updatedCmp.totalSpots) {
+        await db
+          .update(campaign)
+          .set({
+            status: 'closed',
+            updatedAt: new Date(),
+          })
+          .where(eq(campaign.id, appRecord.campaignId));
+      }
     }
 
 
@@ -654,8 +683,16 @@ export async function submitBulkWalletsAction(data: {
       return { success: false, error: 'No valid wallet addresses provided' };
     }
 
-    // Fetch allocation to check deadline
+    // Fetch allocation to check deadline and allocated spot limit
     const [allocRecord] = await db.select().from(campaignAllocation).where(eq(campaignAllocation.id, data.allocationId));
+
+    const maxSpots = allocRecord?.allocatedSpots || 10;
+    if (validWallets.length > maxSpots) {
+      return {
+        success: false,
+        error: `You cannot submit more than the required ${maxSpots} wallets for this allocation.`,
+      };
+    }
 
     if (allocRecord?.deadline && Date.now() > new Date(allocRecord.deadline).getTime()) {
       // Mark as expired
@@ -703,6 +740,18 @@ export async function submitBulkWalletsAction(data: {
         updatedAt: new Date(),
       })
       .where(eq(campaign.id, data.campaignId));
+
+    // Auto-close campaign if total claimed spots reaches capacity
+    const [updatedCmp] = await db.select().from(campaign).where(eq(campaign.id, data.campaignId));
+    if (updatedCmp && (updatedCmp.claimedSpots || 0) >= updatedCmp.totalSpots) {
+      await db
+        .update(campaign)
+        .set({
+          status: 'closed',
+          updatedAt: new Date(),
+        })
+        .where(eq(campaign.id, data.campaignId));
+    }
 
     // Fetch target campaign details for notification
     const [cmpRecord] = await db.select().from(campaign).where(eq(campaign.id, data.campaignId));
