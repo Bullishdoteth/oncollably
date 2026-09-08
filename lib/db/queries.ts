@@ -8,9 +8,11 @@ import {
   cmPortfolio,
   teamMember,
   communityRepresentative,
+  communityProfile,
   user,
+  applicationMessage,
 } from './schema';
-import { eq, and, desc, or } from 'drizzle-orm';
+import { eq, and, desc, or, inArray } from 'drizzle-orm';
 
 /**
  * Workspaces
@@ -169,6 +171,14 @@ export async function getApplicationsForProject(projectWorkspaceId: string) {
     return rows.map((r) => ({
       ...r.application,
       campaignTitle: r.campaign.title,
+      spotsPerCommunity: r.campaign.spotsPerCommunity || 10,
+      minDiscordMembers: r.campaign.minDiscordMembers || 0,
+      minXFollowers: r.campaign.minXFollowers || 0,
+      minCmExperienceYears: r.campaign.minCmExperienceYears || 0,
+      requireDiscordVerification: r.campaign.requireDiscordVerification || false,
+      requireXVerification: r.campaign.requireXVerification || false,
+      allowedCommunityTypes: r.campaign.allowedCommunityTypes || '',
+      customRequirements: r.campaign.customRequirements || '',
       applicantName: r.application.representedCommunityName || r.applicantWorkspace.name,
       applicantHandle: r.applicantWorkspace.handle,
       applicantType: r.application.representedCommunityType || r.applicantWorkspace.type,
@@ -183,8 +193,25 @@ export async function getApplicationsForProject(projectWorkspaceId: string) {
   }
 }
 
+/**
+ * Applications
+ */
+
+/**
+ * Fetch applications for applicant workspace OR represented community workspace
+ */
 export async function getApplicationsForApplicant(applicantWorkspaceId: string) {
   try {
+    const [targetWs] = await db.select().from(workspace).where(eq(workspace.id, applicantWorkspaceId));
+
+    const conditions = [
+      eq(application.applicantWorkspaceId, applicantWorkspaceId),
+      eq(application.representedCommunityWorkspaceId, applicantWorkspaceId),
+    ];
+    if (targetWs?.name) {
+      conditions.push(eq(application.representedCommunityName, targetWs.name));
+    }
+
     const rows = await db
       .select({
         application: application,
@@ -194,15 +221,36 @@ export async function getApplicationsForApplicant(applicantWorkspaceId: string) 
       .from(application)
       .innerJoin(campaign, eq(application.campaignId, campaign.id))
       .innerJoin(workspace, eq(campaign.workspaceId, workspace.id))
-      .where(eq(application.applicantWorkspaceId, applicantWorkspaceId))
+      .where(or(...conditions))
       .orderBy(desc(application.createdAt));
 
-    return rows.map((r) => ({
-      ...r.application,
-      campaignTitle: r.campaign.title,
-      projectName: r.projectWorkspace.name,
-      projectHandle: r.projectWorkspace.handle,
-    }));
+    // Fetch CM workspace names/handles for any applications pitched by a CM
+    const applicantWorkspaceIds = Array.from(new Set(rows.map((r) => r.application.applicantWorkspaceId)));
+    const applicantWorkspaces = applicantWorkspaceIds.length > 0
+      ? await db.select().from(workspace).where(inArray(workspace.id, applicantWorkspaceIds))
+      : [];
+    const wsMap = new Map(applicantWorkspaces.map((w) => [w.id, w]));
+
+    return rows.map((r) => {
+      const appWs = wsMap.get(r.application.applicantWorkspaceId);
+      const isCmPitch =
+        r.application.applicantType === 'cm' ||
+        Boolean(r.application.cmHandle) ||
+        r.application.applicantWorkspaceId !== applicantWorkspaceId;
+      
+      const pitchedByCmHandle = r.application.cmHandle || (appWs?.handle ? `@${appWs.handle.replace(/^@/, '')}` : null);
+      const pitchedByCmName = appWs?.name || 'Collab Manager';
+
+      return {
+        ...r.application,
+        campaignTitle: r.campaign.title,
+        projectName: r.projectWorkspace.name,
+        projectHandle: r.projectWorkspace.handle,
+        isPitchedByCm: isCmPitch,
+        pitchedByCmHandle,
+        pitchedByCmName,
+      };
+    });
   } catch (error) {
     console.error('Error fetching applicant applications:', error);
     return [];
@@ -211,6 +259,8 @@ export async function getApplicationsForApplicant(applicantWorkspaceId: string) 
 
 export async function getCollaborationsForCommunity(communityWorkspaceId: string) {
   try {
+    const [targetWs] = await db.select().from(workspace).where(eq(workspace.id, communityWorkspaceId));
+
     const rows = await db
       .select({
         allocation: campaignAllocation,
@@ -222,6 +272,30 @@ export async function getCollaborationsForCommunity(communityWorkspaceId: string
       .innerJoin(workspace, eq(campaign.workspaceId, workspace.id))
       .where(eq(campaignAllocation.communityWorkspaceId, communityWorkspaceId))
       .orderBy(desc(campaignAllocation.createdAt));
+
+    // Also look up applications to determine if pitched by CM and attach CM info
+    const appRows = await db
+      .select({
+        application: application,
+        applicantWorkspace: workspace,
+      })
+      .from(application)
+      .innerJoin(workspace, eq(application.applicantWorkspaceId, workspace.id))
+      .where(
+        or(
+          eq(application.applicantWorkspaceId, communityWorkspaceId),
+          eq(application.representedCommunityWorkspaceId, communityWorkspaceId),
+          targetWs ? eq(application.representedCommunityName, targetWs.name) : undefined
+        )
+      );
+
+    const appMapByCampaign = new Map<string, { app: typeof application.$inferSelect; cmWs: typeof workspace.$inferSelect }>();
+    for (const item of appRows) {
+      appMapByCampaign.set(item.application.campaignId, {
+        app: item.application,
+        cmWs: item.applicantWorkspace,
+      });
+    }
 
     const result = [];
     for (const r of rows) {
@@ -240,6 +314,17 @@ export async function getCollaborationsForCommunity(communityWorkspaceId: string
         .orderBy(desc(entry.submittedAt));
 
       const claimedSpots = entries.length > 0 ? entries.length : r.allocation.claimedSpots;
+      const appInfo = appMapByCampaign.get(r.allocation.campaignId);
+
+      const isPitchedByCm = appInfo
+        ? appInfo.app.applicantType === 'cm' || Boolean(appInfo.app.cmHandle) || appInfo.app.applicantWorkspaceId !== communityWorkspaceId
+        : false;
+
+      const pitchedByCmHandle = appInfo
+        ? appInfo.app.cmHandle || `@${appInfo.cmWs.handle.replace(/^@/, '')}`
+        : null;
+
+      const pitchedByCmName = appInfo ? appInfo.cmWs.name : null;
 
       result.push({
         ...r.allocation,
@@ -251,6 +336,9 @@ export async function getCollaborationsForCommunity(communityWorkspaceId: string
         deadline: r.allocation.deadline || r.campaign.walletSubmissionDeadline,
         claimedSpots,
         status: claimedSpots >= r.allocation.allocatedSpots ? 'completed' : r.allocation.status,
+        isPitchedByCm,
+        pitchedByCmHandle,
+        pitchedByCmName,
         entries: entries.map((e) => ({
           id: e.id,
           walletAddress: e.walletAddress,
@@ -502,3 +590,46 @@ export async function getCommunityRepresentatives(communityWorkspaceId: string) 
     return [];
   }
 }
+
+export async function getCommunitiesWithProfiles() {
+  try {
+    const rows = await db
+      .select({
+        workspace: workspace,
+        profile: communityProfile,
+      })
+      .from(workspace)
+      .leftJoin(communityProfile, eq(workspace.id, communityProfile.workspaceId))
+      .where(eq(workspace.type, 'community'))
+      .orderBy(desc(workspace.createdAt));
+
+    return rows.map((r) => ({
+      id: r.workspace.id,
+      name: r.workspace.name,
+      handle: r.workspace.handle,
+      communityType: r.profile?.communityType || 'DAO',
+      discordMemberCount: r.profile?.membersCount || r.workspace.discordMemberCount || 12500,
+      xFollowerCount: r.profile?.xFollowerCount || r.workspace.xFollowerCount || 45000,
+      discordInvite: r.profile?.discordInviteUrl || r.workspace.discord || `discord.gg/${r.workspace.handle}`,
+      xHandle: r.profile?.xHandle || r.workspace.twitter || `@${r.workspace.handle}`,
+      avatarUrl: r.workspace.avatarUrl,
+    }));
+  } catch (error) {
+    console.error('Error fetching communities with profiles:', error);
+    return [];
+  }
+}
+
+export async function getApplicationMessages(applicationId: string) {
+  try {
+    return await db
+      .select()
+      .from(applicationMessage)
+      .where(eq(applicationMessage.applicationId, applicationId))
+      .orderBy(applicationMessage.createdAt);
+  } catch (error) {
+    console.error('Error fetching application messages:', error);
+    return [];
+  }
+}
+

@@ -10,6 +10,8 @@ import {
   entry,
   communityRepresentative,
   user,
+  applicationMessage,
+  notification,
 } from './schema';
 import { eq, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
@@ -22,6 +24,7 @@ import {
   sendWalletEntryEmail,
 } from '@/services/email';
 import { createInAppNotification } from '@/services/notifications';
+import { evaluateVettingRequirements } from '@/lib/utils/vetting';
 
 /**
  * Create a new Campaign
@@ -32,9 +35,17 @@ export async function createCampaignAction(data: {
   title: string;
   description?: string;
   totalSpots: number;
+  spotsPerCommunity?: number;
   allocationType?: 'guaranteed' | 'fcfs';
   ecosystem?: string;
   expiresInDays?: number;
+  minDiscordMembers?: number;
+  minXFollowers?: number;
+  minCmExperienceYears?: number;
+  requireDiscordVerification?: boolean;
+  requireXVerification?: boolean;
+  allowedCommunityTypes?: string;
+  customRequirements?: string;
 }) {
   try {
     let resolvedWorkspaceId = data.workspaceId;
@@ -96,12 +107,20 @@ export async function createCampaignAction(data: {
       slug: slug || `cmp-${Date.now()}`,
       description: data.description || '',
       totalSpots: data.totalSpots || 50,
+      spotsPerCommunity: data.spotsPerCommunity || 10,
       allocatedSpots: 0,
       claimedSpots: 0,
       allocationType: data.allocationType || 'guaranteed',
       ecosystem: data.ecosystem || 'Solana',
       status: 'active',
       expiresAt,
+      minDiscordMembers: data.minDiscordMembers || 0,
+      minXFollowers: data.minXFollowers || 0,
+      minCmExperienceYears: data.minCmExperienceYears || 0,
+      requireDiscordVerification: data.requireDiscordVerification || false,
+      requireXVerification: data.requireXVerification || false,
+      allowedCommunityTypes: data.allowedCommunityTypes || '',
+      customRequirements: data.customRequirements || '',
       createdAt: new Date(),
       updatedAt: new Date(),
     });
@@ -110,7 +129,7 @@ export async function createCampaignAction(data: {
     await createInAppNotification({
       workspaceId: resolvedWorkspaceId,
       title: "Campaign Launched",
-      message: `Your campaign '${data.title}' is now live with ${data.totalSpots} spots.`,
+      message: `Your campaign '${data.title}' is now live with ${data.totalSpots} spots (${data.spotsPerCommunity || 10} spots/community).`,
       type: "campaign",
       link: "/project/campaigns",
     });
@@ -178,6 +197,29 @@ export async function submitApplicationAction(data: {
       };
     }
 
+    // Projects set how much spot is available to communities / CMs!
+    const effectiveSpots = cmpRecord.spotsPerCommunity || data.requestedSpots || 10;
+
+    // Evaluate vetting requirement checks against project campaign requirements
+    const vettingEval = evaluateVettingRequirements(
+      {
+        minDiscordMembers: cmpRecord.minDiscordMembers,
+        minXFollowers: cmpRecord.minXFollowers,
+        minCmExperienceYears: cmpRecord.minCmExperienceYears,
+        requireDiscordVerification: cmpRecord.requireDiscordVerification,
+        requireXVerification: cmpRecord.requireXVerification,
+        allowedCommunityTypes: cmpRecord.allowedCommunityTypes,
+        customRequirements: cmpRecord.customRequirements,
+      },
+      {
+        discordMemberCount: data.discordMemberCount,
+        xFollowerCount: data.xFollowerCount,
+        discordInvite: data.discordInvite,
+        xHandle: data.xHandle,
+        communityType: data.representedCommunityType,
+      }
+    );
+
     const id = `app_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
 
     await db.insert(application).values({
@@ -191,8 +233,10 @@ export async function submitApplicationAction(data: {
       xFollowerCount: data.xFollowerCount || 45000,
       xHandle: data.xHandle || '',
       applicantType: data.applicantType || 'community',
-      requestedSpots: data.requestedSpots || 10,
+      requestedSpots: effectiveSpots,
       status: 'pending',
+      vettingStatus: vettingEval.vettingStatus,
+      vettingDetails: JSON.stringify(vettingEval),
       pitchMessage: data.pitchMessage || '',
       discordInvite: data.discordInvite || '',
       cmHandle: data.cmHandle || '',
@@ -275,6 +319,7 @@ export async function updateApplicationStatusAction(
       .set({
         status: newStatus,
         deadline: newStatus === 'accepted' ? calculatedDeadline : null,
+        reviewedAt: new Date(),
         updatedAt: new Date(),
       })
       .where(eq(application.id, applicationId));
@@ -284,11 +329,12 @@ export async function updateApplicationStatusAction(
 
     // If accepted, grant allocation & update allocated spots count with deadline
     if (newStatus === 'accepted') {
+      const targetCommunityWorkspaceId = appRecord.representedCommunityWorkspaceId || appRecord.applicantWorkspaceId;
       const allocId = `alloc_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
       await db.insert(campaignAllocation).values({
         id: allocId,
         campaignId: appRecord.campaignId,
-        communityWorkspaceId: appRecord.applicantWorkspaceId,
+        communityWorkspaceId: targetCommunityWorkspaceId,
         allocatedSpots: appRecord.requestedSpots,
         claimedSpots: 0,
         deadline: calculatedDeadline,
@@ -786,6 +832,73 @@ export async function submitBulkWalletsAction(data: {
   } catch (error: any) {
     console.error('Error submitting bulk wallets:', error);
     return { success: false, error: error?.message || 'Failed to submit wallet sheet' };
+  }
+}
+
+/**
+ * Send an In-App Negotiation Message for an Application
+ */
+export async function sendApplicationMessageAction(data: {
+  applicationId: string;
+  senderWorkspaceId: string;
+  senderName: string;
+  senderRole: 'project' | 'cm' | 'community';
+  message: string;
+}) {
+  try {
+    if (!data.message || !data.message.trim()) {
+      return { success: false, error: 'Message cannot be empty' };
+    }
+
+    const [appRecord] = await db
+      .select()
+      .from(application)
+      .where(eq(application.id, data.applicationId));
+
+    if (!appRecord) {
+      return { success: false, error: 'Application not found' };
+    }
+
+    const msgId = `msg_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const newMsg = {
+      id: msgId,
+      applicationId: data.applicationId,
+      senderWorkspaceId: data.senderWorkspaceId,
+      senderName: data.senderName,
+      senderRole: data.senderRole,
+      message: data.message.trim(),
+      createdAt: new Date(),
+    };
+
+    await db.insert(applicationMessage).values(newMsg);
+
+    // Notify recipient workspace
+    const [cmpRecord] = await db.select().from(campaign).where(eq(campaign.id, appRecord.campaignId));
+    const recipientWorkspaceId =
+      data.senderWorkspaceId === cmpRecord?.workspaceId
+        ? appRecord.applicantWorkspaceId
+        : cmpRecord?.workspaceId;
+
+    if (recipientWorkspaceId) {
+      await db.insert(notification).values({
+        id: `notif_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        workspaceId: recipientWorkspaceId,
+        title: `New Negotiation Message from ${data.senderName}`,
+        message: `"${data.message.trim().substring(0, 80)}${data.message.length > 80 ? '...' : ''}"`,
+        type: 'application',
+        read: false,
+        createdAt: new Date(),
+      });
+    }
+
+    revalidatePath('/project/applications');
+    revalidatePath('/cm/applications');
+    revalidatePath('/community/applications');
+
+    return { success: true, message: newMsg };
+  } catch (error: any) {
+    console.error('Error sending application message:', error);
+    return { success: false, error: error?.message || 'Failed to send message' };
   }
 }
 

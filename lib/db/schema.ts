@@ -90,6 +90,11 @@ export const communityProfile = pgTable('community_profile', {
   membersCount: integer('members_count').notNull().default(0),
   discordServerId: text('discord_server_id'),
   discordInviteUrl: text('discord_invite_url'),
+  discordBotInstalled: boolean('discord_bot_installed').notNull().default(false),
+  discordRolesCache: text('discord_roles_cache'),
+  discordOwnerId: text('discord_owner_id'),
+  discordOwnerVerified: boolean('discord_owner_verified').notNull().default(false),
+  discordLastVerifiedAt: timestamp('discord_last_verified_at'),
   xHandle: text('x_handle'),
   xFollowerCount: integer('x_follower_count').notNull().default(0),
   verifiedMetricsUpdatedAt: timestamp('verified_metrics_updated_at'),
@@ -142,6 +147,7 @@ export const campaign = pgTable('campaign', {
   slug: text('slug').notNull(),
   description: text('description'),
   totalSpots: integer('total_spots').notNull().default(50),
+  spotsPerCommunity: integer('spots_per_community').notNull().default(10),
   allocatedSpots: integer('allocated_spots').notNull().default(0),
   claimedSpots: integer('claimed_spots').notNull().default(0),
   allocationType: text('allocation_type').notNull().default('guaranteed'),
@@ -151,6 +157,13 @@ export const campaign = pgTable('campaign', {
   walletSubmissionDeadline: timestamp('wallet_submission_deadline'),
   discordRequirement: boolean('discord_requirement').notNull().default(true),
   twitterRequirement: boolean('twitter_requirement').notNull().default(true),
+  minDiscordMembers: integer('min_discord_members').default(0),
+  minXFollowers: integer('min_x_followers').default(0),
+  minCmExperienceYears: integer('min_cm_experience_years').default(0),
+  requireDiscordVerification: boolean('require_discord_verification').notNull().default(false),
+  requireXVerification: boolean('require_x_verification').notNull().default(false),
+  allowedCommunityTypes: text('allowed_community_types').default(''),
+  customRequirements: text('custom_requirements').default(''),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
@@ -189,10 +202,13 @@ export const application = pgTable('application', {
   applicantType: text('applicant_type').notNull().default('community'),
   requestedSpots: integer('requested_spots').notNull().default(10),
   status: text('status').notNull().default('pending'),
+  vettingStatus: text('vetting_status').notNull().default('passed'), // 'passed', 'failed', 'warning'
+  vettingDetails: text('vetting_details').default(''),
   pitchMessage: text('pitch_message'),
   discordInvite: text('discord_invite'),
   cmHandle: text('cm_handle'),
   deadline: timestamp('deadline'),
+  reviewedAt: timestamp('reviewed_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
@@ -263,5 +279,17 @@ export const notification = pgTable('notification', {
   type: text('type').notNull().default('info'), // 'application', 'allocation', 'campaign', 'system', 'entry'
   read: boolean('read').notNull().default(false),
   link: text('link'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const applicationMessage = pgTable('application_message', {
+  id: text('id').primaryKey(),
+  applicationId: text('application_id')
+    .notNull()
+    .references(() => application.id, { onDelete: 'cascade' }),
+  senderWorkspaceId: text('sender_workspace_id').notNull(),
+  senderName: text('sender_name').notNull(),
+  senderRole: text('sender_role').notNull().default('applicant'), // 'project' | 'cm' | 'community'
+  message: text('message').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
 });

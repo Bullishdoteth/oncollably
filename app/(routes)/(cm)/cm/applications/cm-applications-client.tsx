@@ -2,7 +2,9 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Inbox, ArrowRight, Clock, CheckCircle2, XCircle, MessageSquare } from "lucide-react"
+import { Inbox, ArrowRight, Clock, CheckCircle2, XCircle, MessageSquare, Calendar } from "lucide-react"
+import { formatTimestamp, getRelativeTimeString } from "@/lib/utils/dates"
+import { ApplicationDiscussionModal } from "@/components/pitch/application-discussion-modal"
 
 interface CmApplicationsClientProps {
   initialApplications: any[]
@@ -10,6 +12,7 @@ interface CmApplicationsClientProps {
 
 export function CmApplicationsClient({ initialApplications = [] }: CmApplicationsClientProps) {
   const [applications] = useState(initialApplications)
+  const [activeDiscussionApp, setActiveDiscussionApp] = useState<any | null>(null)
 
   return (
     <div className="space-y-8">
@@ -52,7 +55,7 @@ export function CmApplicationsClient({ initialApplications = [] }: CmApplication
             applications.map((app) => (
               <div key={app.id} className="py-5 space-y-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     <div className="flex items-center gap-2 flex-wrap">
                       <h3 className="text-base font-bold text-zinc-900">{app.projectName || "Project Partner"}</h3>
                       {app.projectHandle && (
@@ -67,9 +70,38 @@ export function CmApplicationsClient({ initialApplications = [] }: CmApplication
                     <p className="text-xs text-zinc-500">
                       Campaign: <span className="font-medium text-zinc-800">{app.campaignTitle}</span>
                     </p>
+
+                    {/* Audit Timestamps */}
+                    <div className="flex flex-wrap items-center gap-2 text-[11px] pt-0.5">
+                      <span className="flex items-center gap-1 font-medium text-zinc-600 bg-zinc-100/80 px-2.5 py-1 rounded-md border border-zinc-200/60">
+                        <Clock className="w-3 h-3 text-zinc-500" />
+                        <span>Pitched: <strong>{formatTimestamp(app.createdAt)}</strong> ({getRelativeTimeString(new Date(app.createdAt)) || 'recently'})</span>
+                      </span>
+
+                      {app.status !== 'pending' && (app.reviewedAt || app.updatedAt) && (
+                        <span className={`flex items-center gap-1 font-semibold px-2.5 py-1 rounded-md border ${
+                          app.status === 'accepted'
+                            ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            : 'bg-rose-50 text-rose-800 border-rose-200'
+                        }`}>
+                          <Calendar className="w-3 h-3" />
+                          <span>
+                            {app.status === 'accepted' ? 'Approved:' : 'Rejected:'} <strong>{formatTimestamp(app.reviewedAt || app.updatedAt)}</strong>
+                          </span>
+                        </span>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                    <button
+                      onClick={() => setActiveDiscussionApp(app)}
+                      className="px-3.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-900 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer rounded-xl border border-indigo-200/80 shadow-2xs"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5 text-indigo-600" />
+                      <span>Discuss Terms</span>
+                    </button>
+
                     <span
                       className={`px-3 py-1 text-xs font-semibold uppercase tracking-wider flex items-center gap-1.5 ${
                         app.status === "accepted"
@@ -117,6 +149,17 @@ export function CmApplicationsClient({ initialApplications = [] }: CmApplication
           )}
         </div>
       </div>
+
+      {activeDiscussionApp && (
+        <ApplicationDiscussionModal
+          isOpen={Boolean(activeDiscussionApp)}
+          onClose={() => setActiveDiscussionApp(null)}
+          application={activeDiscussionApp}
+          currentWorkspaceId={activeDiscussionApp.applicantWorkspaceId || "cm_ws"}
+          currentWorkspaceName={activeDiscussionApp.cmHandle || "Collab Manager"}
+          currentUserRole="cm"
+        />
+      )}
     </div>
   )
 }

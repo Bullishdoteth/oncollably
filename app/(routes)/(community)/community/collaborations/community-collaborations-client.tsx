@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { Handshake, CheckCircle2, ArrowRight, ExternalLink, FileSpreadsheet, Clock, AlertCircle } from "lucide-react"
+import { Handshake, CheckCircle2, ArrowRight, ExternalLink, FileSpreadsheet, Clock, AlertCircle, UserCheck } from "lucide-react"
 import { WalletSubmissionSheet } from "@/components/sheets/wallet-submission-sheet"
 import { SheetCountdown } from "@/components/sheets/sheet-countdown"
 
@@ -91,6 +91,18 @@ export function CommunityCollaborationsClient({
                         <span className="px-2.5 py-0.5 text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-md">
                           ✓ {collab.allocatedSpots || 10} Spots Granted
                         </span>
+
+                        {collab.isPitchedByCm ? (
+                          <span className="px-2.5 py-0.5 text-[10px] font-bold bg-amber-50 text-amber-900 border border-amber-200 rounded-md flex items-center gap-1">
+                            <UserCheck className="w-3.5 h-3.5 text-amber-600" />
+                            <span>Secured & Managed by CM {collab.pitchedByCmHandle || 'Representative'}</span>
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-0.5 text-[10px] font-bold bg-blue-50 text-blue-900 border border-blue-200 rounded-md">
+                            Directly Managed by Community
+                          </span>
+                        )}
+
                         <span className="text-xs text-zinc-400 font-mono">/c/{collab.projectHandle}/{collab.campaignSlug}</span>
                       </div>
                       <p className="text-xs text-zinc-500 font-normal">
