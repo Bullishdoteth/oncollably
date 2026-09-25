@@ -222,7 +222,7 @@ export function PublicProjectClient({
                                 </div>
                                 <div className="space-y-1.5 text-[11px]">
                                   <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
-                                    <span>✓</span> Project Access Pass ($10)
+                                    <span>✓</span> Free Platform Workspace
                                   </div>
                                   {verification.checks.xConnected && (
                                     <div className="flex items-center gap-1.5 text-emerald-400 font-medium">

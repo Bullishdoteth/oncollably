@@ -108,19 +108,7 @@ function OnboardingContent() {
   const isProject = selectedOptionId === "launch_campaign"
   const urlPrefix = isProject ? `${cleanAppUrl}/c/` : `${cleanAppUrl}/@`
 
-  // Handle Polar Checkout Return Success URL (?status=success)
-  useEffect(() => {
-    const status = searchParams.get("status")
-    if (status === "success") {
-      toast.success("Payment verified! Your workspace has been activated.", {
-        description: "Redirecting you to your project dashboard...",
-      })
-      const timeout = setTimeout(() => {
-        router.push("/project")
-      }, 1500)
-      return () => clearTimeout(timeout)
-    }
-  }, [searchParams, router])
+
 
   // Auto-generate handle when name changes: translate spaces to hyphens (-)
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -246,11 +234,7 @@ function OnboardingContent() {
         throw new Error(data.error || "Failed to complete onboarding")
       }
 
-      if (data.requiresPayment && data.checkoutUrl) {
-        toast.info("Redirecting to Polar payment checkout...")
-        window.location.href = data.checkoutUrl
-        return
-      }
+
 
       toast.success("Workspace setup complete! Redirecting to dashboard...")
       router.push(data.redirectUrl || `/${data.workspaceType || "project"}`)
@@ -631,20 +615,20 @@ function OnboardingContent() {
                 />
               </div>
 
-              {/* One-Time Creation Fee Summary */}
+              {/* Free Platform Activation Summary */}
               {selectedOption.id === "launch_campaign" && (
                 <div className="p-5 rounded-2xl bg-zinc-50 border border-zinc-200/80 flex items-center justify-between gap-4">
                   <div className="space-y-0.5">
                     <div className="text-sm font-semibold text-zinc-900">
-                      Project Creation Fee
+                      Free Platform Activation
                     </div>
                     <p className="text-xs text-zinc-500">
-                      One-time payment to verify authenticity & launch campaigns
+                      Instant setup to launch campaigns & verify community entries
                     </p>
                   </div>
                   <div className="text-right shrink-0">
-                    <span className="text-xl font-bold text-zinc-900">$10</span>
-                    <span className="text-xs text-zinc-400 block font-normal">one-time</span>
+                    <span className="text-xl font-bold text-emerald-600">$0</span>
+                    <span className="text-xs text-zinc-400 block font-normal">Free for now</span>
                   </div>
                 </div>
               )}
@@ -680,9 +664,7 @@ function OnboardingContent() {
                   ) : (
                     <>
                       <span>
-                        {selectedOption.id === "launch_campaign"
-                          ? "Pay $10 & Create Workspace"
-                          : "Complete Setup & Enter Dashboard"}
+                        Complete Setup & Enter Dashboard
                       </span>
                       <ArrowRight className="w-4 h-4" />
                     </>
@@ -690,9 +672,7 @@ function OnboardingContent() {
                 </button>
 
                 <p className="text-xs text-center text-zinc-400">
-                  {selectedOption.id === "launch_campaign"
-                    ? "One-time access fee. No recurring monthly subscription."
-                    : "You can update your workspace info anytime in Account Settings."}
+                  100% Free platform. No monthly subscription or hidden fees.
                 </p>
               </div>
             </form>

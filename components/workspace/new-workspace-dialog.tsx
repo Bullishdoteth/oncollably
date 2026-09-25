@@ -36,7 +36,7 @@ const CARDS: CardOption[] = [
   {
     id: "launch_campaign",
     tag: "For Projects",
-    priceTag: "$10 Access Pass",
+    priceTag: "Free",
     title: "Launch Campaign",
     subtitle: "Launch giveaway campaigns, verify community entries, and allocate whitelist spots automatically.",
     icon: Rocket,
@@ -241,15 +241,6 @@ export function NewWorkspaceDialog() {
         throw new Error(data.error || "Failed to create workspace")
       }
 
-      // $10 Project Access Pass (Polar Checkout required)
-      if (data.requiresPayment && data.checkoutUrl) {
-        toast.success("Workspace initialized!", {
-          description: "Redirecting to checkout for $10 Project Access Pass...",
-        })
-        window.location.href = data.checkoutUrl
-        return
-      }
-
       // Free workspace created
       const newWorkspaceType = data.workspaceType || "project"
       const targetHandle = formData.handle?.trim() || `ws_${Date.now()}`
@@ -401,14 +392,7 @@ export function NewWorkspaceDialog() {
 
                   <div className="pt-4 flex items-center justify-between border-t border-zinc-100">
                     <div className="text-xs text-zinc-500">
-                      {isProject ? (
-                        <span className="flex items-center gap-1.5 font-medium text-emerald-700">
-                          <CreditCard className="w-4 h-4 text-emerald-600" />
-                          Requires $10 Project Access Pass checkout
-                        </span>
-                      ) : (
-                        <span>Free instant workspace activation</span>
-                      )}
+                      <span>Free instant workspace activation</span>
                     </div>
 
                     <button
@@ -599,11 +583,6 @@ export function NewWorkspaceDialog() {
                         <>
                           <Loader2 className="w-4 h-4 animate-spin text-white" />
                           <span>Processing...</span>
-                        </>
-                      ) : isProject ? (
-                        <>
-                          <CreditCard className="w-4 h-4 text-white" />
-                          <span>Pay $10 & Activate Project</span>
                         </>
                       ) : (
                         <>

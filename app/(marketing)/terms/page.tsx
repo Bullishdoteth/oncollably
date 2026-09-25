@@ -44,9 +44,9 @@ export default function TermsOfServicePage() {
           </section>
 
           <section className="space-y-3" id="pricing-payment">
-            <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 tracking-tight">2. One-Time Payment Structure</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-zinc-900 tracking-tight">2. Free Platform Access</h2>
             <p>
-              Oncollably operates on a flat <strong>$10 one-time payment per project launch</strong> model. There are zero recurring monthly subscriptions or hidden maintenance fees. Once payment is processed, the project receives access to collaboration management tools and wallet export features for that campaign. All fees are non-refundable once campaign tools have been accessed.
+              Oncollably currently operates as a free platform for Web3 project creators, DAOs, and Collab Managers. There are zero recurring monthly subscriptions, project creation fees, or hidden maintenance costs. Platform features and collaboration management tools are accessible free of charge.
             </p>
           </section>
 
